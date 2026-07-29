@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Signal Bloom — Performer Controls Prototype</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --cyan:    #00f0ff;
+    --magenta: #ff00ee;
+    --blue:    #1a1aff;
+    --amber:   #ffaa00;
+    --dim:     rgba(0,240,255,0.10);
+    --mid:     rgba(0,240,255,0.45);
+    --bright:  rgba(0,240,255,0.92);
+    --font:    'Courier New', Courier, monospace;
+  }
+  body {
+    background: #000;
+    color: var(--cyan);
+    font-family: var(--font);
+    font-size: 13px;
+    overflow: hidden;
+    width: 100vw; height: 100vh;
+  }
+
+  /* ── Simulated tunnel background ── */
+  #bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 50% 50% at 50% 50%,
+        rgba(26,26,255,0.12) 0%, transparent 70%),
+      #000610;
+    transition: background 0.5s;
+  }
+  #bg.blackout { background: #000; }
+
+  #scanlines-overlay {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      to bottom, transparent 0, transparent 2px,
+      rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 3px
+    );
+    pointer-events: none; display: none; z-index: 60;
+  }
+
+  /* ── Status bar ── */
+  #status-bar {
+    position: absolute; top:0; left:0; right:0; height:28px;
+    display: flex; align-items: center; padding: 0 16px; gap:18px;
+    background: rgba(0,0,0,0.7);
+    border-bottom: 1px solid var(--dim);
+    color: var(--mid); font-size:11px; letter-spacing:.08em;
+    z-index: 70; transition: opacity 0.3s;
+  }
+  #status-bar.hidden { opacity: 0; }
+  .logo { color: var(--bright); letter-spacing:.15em; font-weight:bold; }
+  #sketch-name { color: var(--bright); }
+  .live-dot {
+    display:inline-block; width:6px; height:6px; border-radius:50%;
+    background:var(--cyan); box-shadow: 0 0 6px var(--cyan);
+    animation: blink 1.8s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+  /* ── Code overlay ── */
+  #code-overlay {
+    position:absolute; top:40px; left:16px; width:320px;
+    background: rgba(0,0,8,0.82); border:1px solid var(--dim);
+    border-left:2px solid rgba(0,240,255,.3);
+    font-size:12px; z-index:80; display:none;
+    mix-blend-mode: difference;
+    animation: fade-in 0.2s ease-out;
+  }
+  #code-overlay.visible { display:block; }
+  @keyframes fade-in { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+  .co-header {
+    display:flex; justify-content:space-between; padding:6px 10px;
+    border-bottom:1px solid var(--dim); font-size:10px; color:var(--mid);
+  }
+  .co-header .fn { color:var(--bright); }
+  .co-header .ltag { animation: blink 1.8s infinite; }
+  pre { padding:10px; line-height:1.75; color: rgba(0,240,255,.6); }
+  .kw{color:var(--magenta)} .fn{color:var(--cyan)} .num{color:var(--amber)}
+
+  /* ── Prompt overlay ── */
+  #prompt-overlay {
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:400px; background:rgba(0,0,8,.92);
+    border:1px solid rgba(0,240,255,.25);
+    backdrop-filter:blur(8px);
+    z-index:90; display:none;
+    animation: fade-in 0.15s ease-out;
+  }
+  #prompt-overlay.visible { display:block; }
+  .po-header {
+    display:flex; justify-content:space-between;
+    padding:8px 14px; border-bottom:1px solid var(--dim);
+    font-size:10px; letter-spacing:.12em; color:var(--mid);
+  }
+  .po-label { color:var(--bright); }
+  #prompt-input {
+    width:100%; background:rgba(0,240,255,.04);
+    border:none; border-bottom:1px solid rgba(0,240,255,.15);
+    padding:12px 14px; color:var(--bright);
+    font-family:var(--font); font-size:14px; outline:none;
+  }
+  #prompt-input::placeholder { color:rgba(0,240,255,.25); }
+  .po-hint {
+    padding:8px 14px; font-size:10px; color:rgba(0,240,255,.25);
+    display:flex; gap:16px;
+  }
+  .po-hint kbd {
+    color:rgba(0,240,255,.5); background:rgba(0,240,255,.06);
+    border:1px solid rgba(0,240,255,.15); padding:1px 5px;
+    font-family:var(--font); font-size:10px;
+  }
+
+  /* ── Event echo panel ── */
+  #echo-panel {
+    position:absolute; bottom:30px; right:16px;
+    width:360px; max-height:340px;
+    background:rgba(0,0,8,.85);
+    border:1px solid var(--dim);
+    z-index:95; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .ep-header {
+    padding:6px 12px; border-bottom:1px solid var(--dim);
+    font-size:10px; color:var(--mid); letter-spacing:.1em;
+    display:flex; justify-content:space-between;
+  }
+  #event-log {
+    flex:1; overflow-y:auto; padding:8px 12px;
+    display:flex; flex-direction:column-reverse;
+    gap:4px; font-size:11px;
+  }
+  .ev-entry {
+    display:flex; gap:10px; animation: ev-flash 0.3s ease-out;
+    line-height:1.5;
+  }
+  @keyframes ev-flash {
+    from { background:rgba(0,240,255,.12); }
+    to   { background:transparent; }
+  }
+  .ev-key {
+    color:var(--bright); min-width:50px;
+    background:rgba(0,240,255,.08); padding:0 6px;
+    text-align:center;
+  }
+  .ev-desc { color:var(--mid); }
+  .ev-desc .highlight { color:var(--cyan); }
+  .ev-desc .warn { color:var(--amber); }
+  .ev-desc .prompt-disp { color:var(--magenta); }
+
+  /* ── Key reference bar ── */
+  #key-ref {
+    position:absolute; bottom:0; left:0; right:0; height:24px;
+    display:flex; align-items:center; padding:0 16px; gap:14px;
+    background:rgba(0,0,0,.6); border-top:1px solid var(--dim);
+    color:rgba(0,240,255,.2); font-size:10px; z-index:100;
+  }
+  #key-ref kbd {
+    background:rgba(0,240,255,.05); border:1px solid rgba(0,240,255,.12);
+    padding:0 4px; font-family:var(--font); font-size:10px;
+    color:rgba(0,240,255,.4);
+  }
+
+  /* ── Blackout ── */
+  #blackout {
+    position:absolute; inset:0; background:#000;
+    z-index:50; display:none; pointer-events:none;
+  }
+  #blackout.active { display:block; }
+  #blackout .bl-label {
+    position:absolute; bottom:50px; left:50%;
+    transform:translateX(-50%);
+    font-size:11px; color:rgba(0,240,255,.3); letter-spacing:.15em;
+  }
+
+  /* ── Prototype label ── */
+  #proto-label {
+    position:absolute; top:34px; right:16px;
+    font-size:10px; color:rgba(0,240,255,.15); letter-spacing:.1em; z-index:200;
+  }
+</style>
+</head>
+<body>
+
+<div id="bg"></div>
+<div id="scanlines-overlay"></div>
+<div id="blackout"><div class="bl-label">[B] RESTORE</div></div>
+
+<!-- Status Bar -->
+<div id="status-bar">
+  <span class="logo">SIGNAL BLOOM</span>
+  <span>·</span>
+  <span>sketch: <span id="sketch-name">00-init</span></span>
+  <span>·</span>
+  <span><span class="live-dot"></span> LIVE</span>
+</div>
+
+<!-- Code Overlay -->
+<div id="code-overlay">
+  <div class="co-header">
+    <span class="fn" id="co-filename">00-init.js</span>
+    <span class="ltag">LIVE ↺ 0</span>
+  </div>
+  <pre><span class="fn">osc</span>(<span class="num">4</span>, <span class="num">0.1</span>, <span class="num">0.8</span>)
+  .<span class="fn">rotate</span>(() => a.fft[<span class="num">2</span>] * Math.PI)
+  .<span class="fn">color</span>(<span class="num">0</span>, () => a.fft[<span class="num">0</span>], () => a.fft[<span class="num">3</span>])
+  .<span class="fn">modulate</span>(<span class="fn">noise</span>(<span class="num">3</span>, <span class="num">0.5</span>))
+  .<span class="fn">out</span>(o0)
+
+<span class="fn">render</span>(o0)</pre>
+</div>
+
+<!-- Prompt Overlay -->
+<div id="prompt-overlay">
+  <div class="po-header">
+    <span class="po-label">▸ GENERATE</span>
+    <span>[Esc] close</span>
+  </div>
+  <input id="prompt-input" type="text" placeholder="describe a form to generate…" autocomplete="off">
+  <div class="po-hint">
+    <span><kbd>Enter</kbd> dispatch</span>
+    <span><kbd>↑ ↓</kbd> history</span>
+    <span><kbd>Esc</kbd> close</span>
+  </div>
+</div>
+
+<!-- Event Echo Panel -->
+<div id="echo-panel">
+  <div class="ep-header">
+    <span>CONTROL LOG</span>
+    <span style="color:rgba(0,240,255,.3)">press any key</span>
+  </div>
+  <div id="event-log"></div>
+</div>
+
+<!-- Key Reference -->
+<div id="key-ref">
+  <span><kbd>← →</kbd> sketch</span>
+  <span><kbd>0–9</kbd> jump</span>
+  <span><kbd>K</kbd> code</span>
+  <span><kbd>P</kbd> prompt</span>
+  <span><kbd>H</kbd> status</span>
+  <span><kbd>B</kbd> blackout</span>
+  <span><kbd>L</kbd> scanlines</span>
+  <span><kbd>Space</kbd> reload</span>
+</div>
+
+<div id="proto-label">PROTOTYPE 01 — keyboard controls</div>
+
+<script>
+  const SKETCHES = [
+    '00-init', '01-osc-feedback', '02-noise-field', '03-voronoi-bloom',
+    '04-fracture-texture', '05-luma-key-audio', '06-floral-noise-machine',
+    '07-glitch-membrane', '08-datamosh-cascade', '09-recursive-mirror'
+  ];
+
+  const state = {
+    sketchIndex: 0,
+    codeVisible: false,
+    statusVisible: true,
+    promptOpen: false,
+    blackout: false,
+    scanlines: false,
+    promptHistory: [],
+    historyIndex: -1,
+    digitBuffer: '',
+    digitTimer: null,
+    reloadCount: 0,
+  };
+
+  const els = {
+    bg:           document.getElementById('bg'),
+    blackout:     document.getElementById('blackout'),
+    scanlines:    document.getElementById('scanlines-overlay'),
+    statusBar:    document.getElementById('status-bar'),
+    sketchName:   document.getElementById('sketch-name'),
+    codeOverlay:  document.getElementById('code-overlay'),
+    coFilename:   document.getElementById('co-filename'),
+    promptOverlay:document.getElementById('prompt-overlay'),
+    promptInput:  document.getElementById('prompt-input'),
+    eventLog:     document.getElementById('event-log'),
+  };
+
+  function log(key, desc) {
+    const entry = document.createElement('div');
+    entry.className = 'ev-entry';
+    entry.innerHTML = `<span class="ev-key">${key}</span><span class="ev-desc">${desc}</span>`;
+    els.eventLog.prepend(entry);
+    while (els.eventLog.children.length > 24) {
+      els.eventLog.removeChild(els.eventLog.lastChild);
+    }
+  }
+
+  function setSketch(index) {
+    state.sketchIndex = ((index % SKETCHES.length) + SKETCHES.length) % SKETCHES.length;
+    const name = SKETCHES[state.sketchIndex];
+    els.sketchName.textContent = name;
+    els.coFilename.textContent = name + '.js';
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (state.promptOpen) {
+      handlePromptKey(e); return;
+    }
+
+    const key = e.key;
+
+    switch (key) {
+      case 'ArrowLeft':
+        setSketch(state.sketchIndex - 1);
+        log('←', `previous sketch → <span class="highlight">${SKETCHES[state.sketchIndex]}</span>`);
+        break;
+
+      case 'ArrowRight':
+        setSketch(state.sketchIndex + 1);
+        log('→', `next sketch → <span class="highlight">${SKETCHES[state.sketchIndex]}</span>`);
+        break;
+
+      case ' ':
+        e.preventDefault();
+        state.reloadCount++;
+        els.coFilename.textContent = SKETCHES[state.sketchIndex] + '.js';
+        log('Space', `reload <span class="highlight">${SKETCHES[state.sketchIndex]}</span> (silent)`);
+        break;
+
+      case 'k': case 'K':
+        state.codeVisible = !state.codeVisible;
+        els.codeOverlay.classList.toggle('visible', state.codeVisible);
+        log('K', state.codeVisible
+          ? 'code overlay <span class="highlight">ON</span>'
+          : 'code overlay <span class="highlight">OFF</span>');
+        break;
+
+      case 'p': case 'P':
+        openPrompt();
+        log('P', 'prompt overlay <span class="highlight">opened</span>');
+        break;
+
+      case 'h': case 'H':
+        state.statusVisible = !state.statusVisible;
+        els.statusBar.classList.toggle('hidden', !state.statusVisible);
+        log('H', state.statusVisible
+          ? 'status bar <span class="highlight">visible</span>'
+          : 'status bar <span class="highlight">hidden</span>');
+        break;
+
+      case 'b': case 'B':
+        state.blackout = !state.blackout;
+        els.blackout.classList.toggle('active', state.blackout);
+        log('B', state.blackout
+          ? '<span class="warn">BLACKOUT — hush()</span>'
+          : 'blackout <span class="highlight">cleared</span>');
+        break;
+
+      case 'l': case 'L':
+        state.scanlines = !state.scanlines;
+        els.scanlines.style.display = state.scanlines ? 'block' : 'none';
+        log('L', state.scanlines
+          ? 'scanlines <span class="highlight">ON</span>'
+          : 'scanlines <span class="highlight">OFF</span>');
+        break;
+
+      case 'c': case 'C':
+        jumpToSketch('webcam');
+        log('C', `jump to <span class="highlight">webcam</span> sketch`);
+        break;
+
+      case 's': case 'S':
+        jumpToSketch('screen');
+        log('S', `jump to <span class="highlight">screen</span> sketch`);
+        break;
+
+      case 'v': case 'V':
+        jumpToSketch('video');
+        log('V', `jump to <span class="highlight">video</span> sketch`);
+        break;
+
+      case 'j': case 'J':
+        log('J', 'cycle code color <span class="highlight">→ magenta</span>');
+        break;
+
+      case 'w': case 'W':
+        log('W', 'code overlay <span class="highlight">warp</span> animation');
+        break;
+
+      default:
+        // Numeric digit buffering (multi-digit sketch jump)
+        if (/^[0-9]$/.test(key)) {
+          state.digitBuffer += key;
+          clearTimeout(state.digitTimer);
+          state.digitTimer = setTimeout(() => {
+            const idx = parseInt(state.digitBuffer);
+            state.digitBuffer = '';
+            if (idx < SKETCHES.length) {
+              setSketch(idx);
+              log(idx, `jump to sketch <span class="highlight">${idx}: ${SKETCHES[state.sketchIndex]}</span>`);
+            } else {
+              log(idx, `<span class="warn">sketch ${idx} not found (max: ${SKETCHES.length - 1})</span>`);
+            }
+          }, 600);
+          return;
+        }
+    }
+  });
+
+  function handlePromptKey(e) {
+    if (e.key === 'Escape') {
+      closePrompt();
+      log('Esc', 'prompt overlay <span class="highlight">closed</span>');
+      return;
+    }
+    if (e.key === 'Enter') {
+      const val = els.promptInput.value.trim();
+      if (!val) return;
+      state.promptHistory.unshift(val);
+      state.historyIndex = -1;
+      log('Enter', `<span class="prompt-disp">GENERATE: "${val}"</span> → dispatched to ComfyUI`);
+      closePrompt();
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      state.historyIndex = Math.min(state.historyIndex + 1, state.promptHistory.length - 1);
+      if (state.promptHistory[state.historyIndex]) {
+        els.promptInput.value = state.promptHistory[state.historyIndex];
+      }
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      state.historyIndex = Math.max(state.historyIndex - 1, -1);
+      els.promptInput.value = state.historyIndex >= 0
+        ? (state.promptHistory[state.historyIndex] || '')
+        : '';
+    }
+  }
+
+  function openPrompt() {
+    state.promptOpen = true;
+    els.promptOverlay.classList.add('visible');
+    els.promptInput.focus();
+    els.promptInput.value = '';
+    state.historyIndex = -1;
+  }
+
+  function closePrompt() {
+    state.promptOpen = false;
+    els.promptOverlay.classList.remove('visible');
+    els.promptInput.blur();
+  }
+
+  function jumpToSketch(keyword) {
+    const idx = SKETCHES.findIndex(s => s.includes(keyword));
+    if (idx >= 0) setSketch(idx);
+    else log('?', `<span class="warn">no sketch matching "${keyword}"</span>`);
+  }
+
+  // Initial log entry
+  log('—', 'prototype loaded · press any key · prompt: <kbd style="color:rgba(0,240,255,.5);padding:0 4px;border:1px solid rgba(0,240,255,.2);font-family:monospace">P</kbd>');
+</script>
+</body>
+</html>

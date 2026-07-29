@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Bloom — Performer Interface Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --cyan:    #00f0ff;
+    --magenta: #ff00ee;
+    --blue:    #1a1aff;
+    --amber:   #ffaa00;
+    --dim:     rgba(0, 240, 255, 0.12);
+    --mid:     rgba(0, 240, 255, 0.45);
+    --bright:  rgba(0, 240, 255, 0.92);
+    --font:    'Courier New', Courier, monospace;
+  }
+
+  body {
+    background: #000;
+    color: var(--cyan);
+    font-family: var(--font);
+    font-size: 13px;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    user-select: none;
+  }
+
+  /* ── Tunnel Canvas (simulated with CSS gradient animation) ── */
+  #tunnel-canvas {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 40% 40% at 50% 50%,
+        rgba(26,26,255,0.18) 0%,
+        transparent 70%),
+      radial-gradient(ellipse 100% 80% at 50% 50%,
+        #000614 0%,
+        #000 100%);
+    overflow: hidden;
+  }
+
+  /* Tunnel ring lines (CSS simulation) */
+  #tunnel-canvas::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-radial-gradient(
+        ellipse at 50% 50%,
+        transparent 0px,
+        transparent 38px,
+        rgba(0, 240, 255, 0.04) 40px
+      );
+    animation: tunnel-scroll 4s linear infinite;
+  }
+
+  @keyframes tunnel-scroll {
+    from { transform: scale(0.4); opacity: 0.4; }
+    to   { transform: scale(1.8); opacity: 0; }
+  }
+
+  /* Hydra texture simulation on tunnel walls */
+  #tunnel-canvas::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(135deg,
+        rgba(0, 240, 255, 0.03) 0%,
+        rgba(255, 0, 238, 0.06) 30%,
+        rgba(26, 26, 255, 0.08) 60%,
+        rgba(0, 240, 255, 0.03) 100%);
+    animation: hydra-shift 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes hydra-shift {
+    from { filter: hue-rotate(0deg); opacity: 0.6; }
+    to   { filter: hue-rotate(40deg); opacity: 1; }
+  }
+
+  /* AI form crystallizing (simulated) */
+  .ai-form {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%) scale(0.7);
+    width: 180px;
+    height: 120px;
+    border: 1.5px solid rgba(0, 240, 255, 0.5);
+    border-radius: 50% / 35%;
+    box-shadow:
+      0 0 20px rgba(0, 240, 255, 0.25),
+      inset 0 0 30px rgba(0, 240, 255, 0.08);
+    animation: crystallize 8s ease-in-out infinite;
+  }
+
+  .ai-form::before {
+    content: '';
+    position: absolute;
+    inset: 25px;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    border-radius: 50% / 35%;
+    box-shadow: 0 0 10px rgba(255, 0, 238, 0.2);
+  }
+
+  @keyframes crystallize {
+    0%   { opacity: 0.1; transform: translate(-50%, -60%) scale(0.4); filter: blur(8px); }
+    40%  { opacity: 0.9; transform: translate(-50%, -60%) scale(0.75); filter: blur(0px); }
+    100% { opacity: 0.7; transform: translate(-50%, -60%) scale(0.7); filter: blur(0px); }
+  }
+
+  /* ── Status Bar ── */
+  #status-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    border-bottom: 1px solid var(--dim);
+    color: var(--mid);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    z-index: 70;
+  }
+
+  #status-bar .logo {
+    color: var(--bright);
+    letter-spacing: 0.15em;
+    font-weight: bold;
+  }
+
+  #status-bar .sep { color: var(--dim); }
+
+  #status-bar .live-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    animation: pulse-dot 1.8s ease-in-out infinite;
+    margin-right: 4px;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  .audio-bars {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+    height: 14px;
+  }
+
+  .audio-bars span {
+    width: 3px;
+    background: var(--cyan);
+    opacity: 0.6;
+    animation: audio-bar 0.5s ease-in-out infinite alternate;
+  }
+
+  .audio-bars span:nth-child(1) { height: 6px;  animation-delay: 0.0s; }
+  .audio-bars span:nth-child(2) { height: 10px; animation-delay: 0.1s; }
+  .audio-bars span:nth-child(3) { height: 14px; animation-delay: 0.2s; }
+  .audio-bars span:nth-child(4) { height: 8px;  animation-delay: 0.3s; }
+  .audio-bars span:nth-child(5) { height: 4px;  animation-delay: 0.4s; }
+
+  @keyframes audio-bar {
+    from { transform: scaleY(0.4); }
+    to   { transform: scaleY(1.0); }
+  }
+
+  /* ── Code Overlay ── */
+  #code-overlay {
+    position: absolute;
+    top: 40px;
+    left: 16px;
+    width: 340px;
+    background: rgba(0, 0, 10, 0.75);
+    border: 1px solid var(--dim);
+    border-left: 2px solid rgba(0, 240, 255, 0.3);
+    font-size: 12px;
+    z-index: 80;
+    mix-blend-mode: difference;
+  }
+
+  #code-overlay .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--dim);
+    font-size: 10px;
+    color: var(--mid);
+  }
+
+  #code-overlay .code-header .filename { color: var(--bright); }
+  #code-overlay .code-header .live-tag {
+    color: var(--cyan);
+    letter-spacing: 0.1em;
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+
+  #code-overlay pre {
+    padding: 10px 10px 10px 8px;
+    line-height: 1.7;
+    color: rgba(0, 240, 255, 0.65);
+    overflow: hidden;
+  }
+
+  #code-overlay pre .ln {
+    display: inline-block;
+    width: 22px;
+    color: rgba(0, 240, 255, 0.2);
+    text-align: right;
+    margin-right: 8px;
+    font-size: 10px;
+  }
+
+  #code-overlay pre .highlight {
+    background: rgba(0, 240, 255, 0.08);
+    box-shadow: inset 2px 0 0 rgba(0, 240, 255, 0.5);
+    color: var(--bright);
+    display: block;
+    margin: 0 -8px;
+    padding: 0 8px;
+  }
+
+  #code-overlay pre .kw { color: var(--magenta); }
+  #code-overlay pre .fn { color: var(--cyan); }
+  #code-overlay pre .num { color: var(--amber); }
+  #code-overlay pre .comment { color: rgba(0, 240, 255, 0.25); font-style: italic; }
+
+  /* ── Prompt Overlay ── */
+  #prompt-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    background: rgba(0, 0, 8, 0.88);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    backdrop-filter: blur(8px);
+    z-index: 90;
+  }
+
+  #prompt-overlay .prompt-header {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--dim);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--mid);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  #prompt-overlay .prompt-header .label { color: var(--bright); }
+
+  #prompt-overlay .prompt-input-area {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--dim);
+  }
+
+  #prompt-overlay .prompt-text {
+    width: 100%;
+    background: rgba(0, 240, 255, 0.04);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    color: var(--bright);
+    font-family: var(--font);
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+  }
+
+  #prompt-overlay .prompt-text::placeholder { color: rgba(0, 240, 255, 0.25); }
+
+  #prompt-overlay .step-section {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--dim);
+  }
+
+  .step-bar-track {
+    height: 3px;
+    background: rgba(0, 240, 255, 0.1);
+    margin: 6px 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .step-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--cyan));
+    width: 70%;
+    box-shadow: 0 0 8px var(--cyan);
+    animation: step-fill 0.3s ease-out;
+  }
+
+  @keyframes step-fill {
+    from { width: 62%; }
+    to   { width: 70%; }
+  }
+
+  .step-label {
+    display: flex;
+    justify-content: space-between;
+    color: var(--mid);
+    font-size: 10px;
+  }
+
+  .step-label .status { color: rgba(255, 0, 238, 0.7); }
+
+  #prompt-overlay .hint-row {
+    padding: 6px 14px;
+    font-size: 10px;
+    color: rgba(0, 240, 255, 0.25);
+    display: flex;
+    gap: 16px;
+  }
+
+  #prompt-overlay .hint-row kbd {
+    color: rgba(0, 240, 255, 0.5);
+    background: rgba(0, 240, 255, 0.06);
+    padding: 1px 5px;
+    border: 1px solid rgba(0, 240, 255, 0.15);
+    font-family: var(--font);
+    font-size: 10px;
+  }
+
+  /* ── Scanlines ── */
+  #scanlines {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(0, 0, 0, 0.12) 2px,
+      rgba(0, 0, 0, 0.12) 3px
+    );
+    pointer-events: none;
+    z-index: 60;
+  }
+
+  /* ── Key Reference Bar ── */
+  #key-ref {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid var(--dim);
+    color: rgba(0, 240, 255, 0.2);
+    font-size: 10px;
+    z-index: 100;
+  }
+
+  #key-ref kbd {
+    background: rgba(0, 240, 255, 0.06);
+    border: 1px solid rgba(0, 240, 255, 0.12);
+    padding: 0 4px;
+    font-family: var(--font);
+    font-size: 10px;
+    color: rgba(0, 240, 255, 0.4);
+  }
+
+  /* ── Mockup Label ── */
+  #mockup-label {
+    position: absolute;
+    bottom: 30px;
+    right: 16px;
+    font-size: 10px;
+    color: rgba(0, 240, 255, 0.15);
+    letter-spacing: 0.1em;
+    z-index: 200;
+  }
+</style>
+</head>
+<body>
+
+<!-- Tunnel Canvas (CSS-simulated for mockup) -->
+<div id="tunnel-canvas">
+  <div class="ai-form"></div>
+</div>
+
+<!-- Scanlines -->
+<div id="scanlines"></div>
+
+<!-- Status Bar -->
+<div id="status-bar">
+  <span class="logo">SIGNAL BLOOM</span>
+  <span class="sep">·</span>
+  <span>sketch: <strong style="color:var(--bright)">04-fracture-bloom</strong></span>
+  <span class="sep">·</span>
+  <span><span class="live-dot"></span>LIVE</span>
+  <span class="sep">·</span>
+  <div class="audio-bars">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- Code Overlay (K key) -->
+<div id="code-overlay">
+  <div class="code-header">
+    <span class="filename">04-fracture-bloom.js</span>
+    <span class="live-tag">LIVE ↺ 3</span>
+  </div>
+  <pre><span class="ln">01</span><span class="fn">osc</span>(<span class="num">4</span>, <span class="num">0.1</span>, <span class="num">0.8</span>)
+<span class="ln">02</span>  .<span class="fn">rotate</span>(() => a.fft[<span class="num">2</span>] * <span class="num">3.14</span>)
+<span class="ln">03</span>  .<span class="fn">color</span>(<span class="num">0</span>, () => a.fft[<span class="num">0</span>],
+<span class="ln">04</span>         () => a.fft[<span class="num">3</span>])
+<span class="ln">05</span>  .<span class="fn">modulate</span>(
+<span class="ln">06</span>    <span class="fn">noise</span>(<span class="num">3</span>, <span class="num">0.5</span>).<span class="fn">brightness</span>(-<span class="num">0.4</span>)
+<span class="ln">07</span>  )
+<span class="highlight"><span class="ln">08</span>  .<span class="fn">blend</span>(o1, () => a.smooth * <span class="num">0.6</span>)</span>
+<span class="ln">09</span>  .<span class="fn">out</span>(o0)
+<span class="ln">10</span>
+<span class="ln">11</span><span class="fn">solid</span>(<span class="num">0</span>,<span class="num">0</span>,<span class="num">0</span>)
+<span class="ln">12</span>  .<span class="fn">diff</span>(
+<span class="ln">13</span>    <span class="fn">src</span>(o0).<span class="fn">scrollX</span>(<span class="num">0.003</span>)
+<span class="ln">14</span>  )
+<span class="ln">15</span>  .<span class="fn">out</span>(o1)
+<span class="ln">16</span>
+<span class="ln">17</span><span class="fn">render</span>(o0)</pre>
+</div>
+
+<!-- Prompt Overlay (P key) — shown in "generating" state -->
+<div id="prompt-overlay">
+  <div class="prompt-header">
+    <span class="label">▸ GENERATE</span>
+    <span>[P] close  [Esc] cancel</span>
+  </div>
+  <div class="prompt-input-area">
+    <input class="prompt-text" type="text" value="three-dimensional torus primitive" readonly>
+  </div>
+  <div class="step-section">
+    <div class="step-label">
+      <span>STEP 14 / 20</span>
+      <span class="status">● generating · 8s elapsed</span>
+    </div>
+    <div class="step-bar-track">
+      <div class="step-bar-fill"></div>
+    </div>
+  </div>
+  <div class="hint-row">
+    <span><kbd>Enter</kbd> dispatch</span>
+    <span><kbd>↑</kbd> history</span>
+    <span><kbd>Esc</kbd> cancel</span>
+  </div>
+</div>
+
+<!-- Key Reference Bar -->
+<div id="key-ref">
+  <span><kbd>← →</kbd> sketch</span>
+  <span><kbd>0–9</kbd> jump</span>
+  <span><kbd>K</kbd> code</span>
+  <span><kbd>P</kbd> prompt</span>
+  <span><kbd>H</kbd> status</span>
+  <span><kbd>B</kbd> blackout</span>
+  <span><kbd>L</kbd> scanlines</span>
+  <span><kbd>Space</kbd> reload</span>
+</div>
+
+<div id="mockup-label">MOCKUP — static, no interactivity</div>
+
+</body>
+</html>

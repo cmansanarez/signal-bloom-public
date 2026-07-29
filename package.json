@@ -1,0 +1,28 @@
+{
+  "name": "signal-bloom",
+  "version": "0.1.0",
+  "description": "Live audiovisual performance instrument — Hydra live coding, Three.js tunnel, local AI generation via ComfyUI",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cmansanarez/Signal_Bloom.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "predev": "lsof -ti:3001,5173 | xargs kill -9 2>/dev/null || true",
+    "dev": "concurrently \"vite\" \"node watcher.js\"",
+    "stop": "lsof -ti:3001,5173 | xargs kill -9 2>/dev/null || true",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "concurrently": "^8.2.0"
+  }
+}

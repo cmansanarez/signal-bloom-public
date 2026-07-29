@@ -1,0 +1,41 @@
+{
+  // ── Signal Bloom workspace settings ──────────────────────────────────────
+  // Suppress VS Code's automatic completion/import behavior. Hydra sketches are
+  // pure globals (no imports), and auto-accept was injecting unwanted code mid-type.
+  // Manual completion still works any time with Ctrl+Space.
+
+  // Stop auto-injecting require()/import lines (this is what broke the sketches).
+  "javascript.suggest.autoImports": false,
+  "typescript.suggest.autoImports": false,
+
+  // Enter makes a newline — it never silently accepts a highlighted suggestion.
+  "editor.acceptSuggestionOnEnter": "off",
+
+  // Don't pop the suggestion widget automatically as you type (Ctrl+Space to summon it).
+  "editor.quickSuggestions": {
+    "other": false,
+    "comments": false,
+    "strings": false
+  },
+  "editor.suggestOnTriggerCharacters": false,
+
+  // No Tab-to-complete, and no inline "ghost text" suggestions.
+  "editor.tabCompletion": "off",
+  "editor.inlineSuggest.enabled": false,
+  "snyk.advanced.autoSelectOrganization": true,
+  "cSpell.words": [
+    "crossfades",
+    "datamosh",
+    "desaturated",
+    "devildog",
+    "ifeven",
+    "kaleid",
+    "luma",
+    "mult",
+    "Noirmak",
+    "posterize",
+    "scanline",
+    "scanlines",
+    "voronoi"
+  ]
+}

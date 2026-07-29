@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+
+# AI generation output — keep the folders, not the images
+generated/latest.png
+generated/archive/
+
+# Your own media for sketches you write — see docs/public-sketch-list.md
+videos/
+images/

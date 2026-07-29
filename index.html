@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signal Bloom</title>
+
+  <!-- Hydra vendored libs — must load before src/main.js initializes HydraManager -->
+  <script src="/libs/hydra-synth.js"></script>
+  <script src="/libs/datamosh.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cyan:    #00f0ff;
+      --magenta: #ff00ee;
+      --blue:    #1a1aff;
+      --amber:   #ffaa00;
+      --black:   #000000;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--black);
+      font-family: 'Courier New', Courier, monospace;
+      color: var(--cyan);
+    }
+
+    /* ── Three.js canvas ──────────────────────────────────────────────────── */
+    #tunnel-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: block;
+      z-index: 0;
+    }
+
+    /* ── Status overlay (H to toggle) ────────────────────────────────────── */
+    #overlay {
+      position: fixed;
+      bottom: 2rem; left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      color: var(--cyan);
+      opacity: 0.6;
+      text-transform: uppercase;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    #overlay.hidden { opacity: 0; }
+
+    #audio-meter-track {
+      width: 5rem;
+      height: 2px;
+      background: rgba(0, 240, 255, 0.15);
+      overflow: hidden;
+    }
+    #audio-meter-fill {
+      height: 100%;
+      background: var(--cyan);
+      width: 0%;
+      transition: width 0.06s linear;
+    }
+
+    /* ── Key hint bar ────────────────────────────────────────────────────── */
+    #key-bar {
+      position: fixed;
+      bottom: 0.6rem; left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      color: rgba(0, 240, 255, 0.3);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* ── Code overlay (K to toggle) ─────────────────────────────────────── */
+    #code-overlay {
+      position: fixed;
+      inset: 0;
+      overflow-y: scroll;
+      scrollbar-width: none;
+      z-index: 30;
+      padding: 2rem 3rem 3rem;
+      background: transparent;
+      pointer-events: none;
+      /* Blend/contrast is handled per-element now (adaptive fg + halo on #code-display,
+         glow on the header) so the container stays a neutral normal-blend layer. */
+      mix-blend-mode: normal;
+      transition: opacity 0.2s;
+    }
+    #code-overlay::-webkit-scrollbar { display: none; }
+    #code-overlay.hidden { opacity: 0; pointer-events: none; }
+
+    /* Edit mode: pointer-events on so textarea is interactive; visuals stay fully visible.
+       Switch to normal blend so the editable text + its dark halo stay legible over any
+       visual while you type (difference washes out on mid-tone backgrounds). */
+    #code-overlay.edit-mode {
+      pointer-events: auto;
+      overflow-y: hidden;
+      mix-blend-mode: normal;
+    }
+
+    #code-overlay-header {
+      font-size: 0.85rem;
+      letter-spacing: 0.18em;
+      color: var(--cyan);
+      text-shadow: 0 0 4px rgba(0, 0, 6, 0.85), 0 0 12px rgba(0, 240, 255, 0.35);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.25);
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    @keyframes live-pulse {
+      0%, 100% { opacity: 0.35; }
+      50%       { opacity: 0.9; }
+    }
+    #code-live-indicator {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      animation: live-pulse 2.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    #code-live-indicator.flash {
+      animation: indicator-flash 0.8s ease-out forwards;
+    }
+    @keyframes indicator-flash {
+      0%   { background: #fff; box-shadow: 0 0 8px #fff; opacity: 1; }
+      100% { background: var(--cyan); box-shadow: none; opacity: 0.9; }
+    }
+
+    /* Edit mode indicator — hidden normally, shown via parent class */
+    #code-edit-indicator {
+      display: none;
+      margin-left: auto;
+      color: var(--magenta);
+      font-size: 0.55rem;
+      letter-spacing: 0.14em;
+      opacity: 0.85;
+    }
+    #code-overlay.edit-mode #code-edit-indicator { display: inline; }
+
+    #code-edit-status {
+      font-size: 0.55rem;
+      letter-spacing: 0.14em;
+      opacity: 0.7;
+      transition: color 0.2s;
+    }
+
+    #code-display {
+      font-size: 1.05rem;
+      line-height: 1.65;
+      /* --code-fg / --code-halo are driven by the luminance sampler in main.js:
+         the whole block flips light↔dark to contrast the visual behind it, and the
+         opposite-tone halo keeps it legible even on mid-gray. Fallbacks = light text. */
+      color: var(--code-fg, #f4f8ff);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      mix-blend-mode: normal;
+      text-shadow:
+        0 0 2px var(--code-halo, rgba(0, 0, 6, 0.9)),
+        0 0 5px var(--code-halo, rgba(0, 0, 6, 0.9)),
+        0 1px 2px var(--code-halo, rgba(0, 0, 6, 0.9));
+      white-space: pre;
+      display: block;
+    }
+    #code-display > span { display: block; }
+    #code-display .ln { color: var(--code-fg, #fff); opacity: 0.4; user-select: none; }
+    /* Commented code reads as clearly secondary: lighter weight + italic + dimmer,
+       cues that survive any blend mode (colour alone is unreliable under difference). */
+    #code-display .comment { opacity: 0.5; font-weight: 400; font-style: italic; }
+
+    @keyframes line-flash {
+      0%   { background: rgba(0, 240, 255, 0.18); box-shadow: inset 4px 0 0 var(--cyan), inset 0 0 24px rgba(0,240,255,0.12); }
+      70%  { box-shadow: inset 4px 0 0 rgba(0,240,255,0.4); }
+      100% { background: transparent; box-shadow: none; }
+    }
+    #code-display .line-changed { animation: line-flash 2.5s ease-out forwards; }
+
+    #code-display[data-color='signal'] {
+      color: var(--cyan);
+      mix-blend-mode: normal;
+      text-shadow: 0 0 10px var(--cyan), 0 0 28px rgba(0, 240, 255, 0.45);
+    }
+    #code-display[data-color='fragment'] {
+      color: var(--magenta);
+      mix-blend-mode: normal;
+      text-shadow: 0 0 10px var(--magenta), 0 0 28px rgba(255, 0, 238, 0.45);
+    }
+    #code-display[data-color='noise'] {
+      color: #b0ffb0;
+      mix-blend-mode: normal;
+      text-shadow: 0 0 10px #b0ffb0, 0 0 28px rgba(176, 255, 176, 0.4);
+    }
+    #code-display[data-color='warn'] {
+      color: var(--amber);
+      mix-blend-mode: normal;
+      text-shadow: 0 0 4px rgba(0, 2, 12, 0.95), 0 0 12px var(--amber);
+    }
+    #code-display[data-color='txt'] {
+      color: #fff;
+      mix-blend-mode: normal;
+      text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
+    }
+
+    #code-display.warping {
+      animation: warp-text 5s ease-in-out infinite;
+      transform-origin: top center;
+    }
+    @keyframes warp-text {
+      0%   { transform: skewY(0deg)    scaleX(1);     font-size: 1.05rem; }
+      20%  { transform: skewY(1.5deg)  scaleX(0.985); font-size: 1.27rem; }
+      40%  { transform: skewY(-2deg)   scaleX(1.015); font-size: 0.83rem; }
+      65%  { transform: skewY(2deg)    scaleX(0.99);  font-size: 1.22rem; }
+      80%  { transform: skewY(-1deg)   scaleX(1.01);  font-size: 0.80rem; }
+      100% { transform: skewY(0deg)    scaleX(1);     font-size: 1.05rem; }
+    }
+
+    /* Edit mode hides the view and shows the textarea */
+    #code-overlay.edit-mode #code-display { display: none; }
+    #code-editor {
+      display: none;
+      width: 100%;
+      height: calc(100vh - 6rem);
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      color: var(--cyan);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1.15rem;
+      line-height: 1.65;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      caret-color: var(--cyan);
+      text-shadow: 0 0 4px rgba(0, 0, 6, 0.95), 0 1px 2px rgba(0, 0, 6, 0.95);
+      padding: 0;
+      tab-size: 2;
+      overflow-y: auto;
+    }
+    #code-overlay.edit-mode #code-editor { display: block; }
+    #code-editor.eval-error { color: var(--amber); caret-color: var(--amber); }
+
+    #code-overlay.scanlines::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,0.08) 3px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #code-overlay.shaking {
+      animation: overlay-shake 0.35s ease-out;
+    }
+    @keyframes overlay-shake {
+      0%   { transform: translateX(0); }
+      15%  { transform: translateX(-5px); }
+      30%  { transform: translateX(5px); }
+      45%  { transform: translateX(-4px); }
+      60%  { transform: translateX(4px); }
+      75%  { transform: translateX(-2px); }
+      90%  { transform: translateX(2px); }
+      100% { transform: translateX(0); }
+    }
+
+    /* ── Prompt overlay (P to toggle) ───────────────────────────────────── */
+    #prompt-overlay {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 40;
+      width: min(600px, 80vw);
+      padding: 1.5rem;
+      border: 1px solid var(--cyan);
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: opacity 0.2s;
+    }
+    #prompt-overlay.hidden { opacity: 0; pointer-events: none; }
+
+    #prompt-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--cyan);
+      text-transform: uppercase;
+    }
+    #prompt-input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--cyan);
+      color: var(--cyan);
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.25rem 0;
+      outline: none;
+      caret-color: var(--cyan);
+    }
+    #prompt-status {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      color: rgba(0,240,255,0.5);
+    }
+
+    #step-track {
+      height: 1px;
+      background: rgba(0, 240, 255, 0.15);
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    #step-fill {
+      height: 100%;
+      background: var(--cyan);
+      width: 0%;
+      box-shadow: 0 0 4px var(--cyan);
+      transition: width 0.3s ease-out;
+    }
+
+    /* Docked state — after Enter, the prompt drops to the bottom as a compact
+       status readout so the crystallization in the tunnel stays unobstructed. */
+    #prompt-overlay.docked {
+      top: auto;
+      bottom: 2.5rem;
+      transform: translateX(-50%);
+      width: min(520px, 80vw);
+      padding: 0.6rem 1rem;
+      gap: 0.35rem;
+      background: rgba(0,0,0,0.55);
+      border-color: rgba(0,240,255,0.35);
+    }
+    #prompt-overlay.docked #prompt-label { opacity: 0.45; }
+    #prompt-overlay.docked #prompt-input {
+      font-size: 0.72rem;
+      opacity: 0.65;
+      pointer-events: none;
+      border-bottom-color: rgba(0,240,255,0.25);
+    }
+    #prompt-overlay.docked #prompt-status { color: var(--cyan); }
+
+    /* ── Machine Liturgy banner (M to cycle) ───────────────────────────── */
+    #liturgy-banner {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      z-index: 25;
+      overflow: hidden;
+      pointer-events: none;
+      display: none;
+      padding: 0.65rem 0;
+      background: rgba(0, 0, 0, 0.22);
+      white-space: nowrap;
+    }
+
+    #liturgy-text {
+      display: inline-block;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: clamp(20px, 2.2vw, 36px);
+      letter-spacing: 0.1em;
+      color: var(--cyan);
+      text-transform: uppercase;
+      will-change: transform;
+      /* chromatic aberration: magenta shadow left, extended cyan glow */
+      text-shadow:
+        -2px 0 0 rgba(255, 0, 238, 0.6),
+        0 0 22px rgba(0, 240, 255, 0.55),
+        0 0 48px rgba(0, 240, 255, 0.2);
+    }
+
+    /* ── Liturgy input overlay (Shift+M) ───────────────────────────────── */
+    #liturgy-input-overlay {
+      position: fixed;
+      bottom: 7rem; left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      width: min(560px, 80vw);
+      padding: 1rem 1.25rem;
+      border: 1px solid var(--magenta);
+      background: rgba(0,0,0,0.88);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transition: opacity 0.2s;
+    }
+    #liturgy-input-overlay.hidden { opacity: 0; pointer-events: none; }
+
+    #liturgy-input-label {
+      font-size: 0.55rem;
+      letter-spacing: 0.22em;
+      color: var(--magenta);
+      text-transform: uppercase;
+    }
+    #liturgy-input-field {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--magenta);
+      color: var(--magenta);
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.25rem 0;
+      outline: none;
+      caret-color: var(--magenta);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    #liturgy-input-field::placeholder { color: rgba(255,0,238,0.35); text-transform: uppercase; }
+
+    /* ── Scanlines global (L) ───────────────────────────────────────────── */
+    #scanlines-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,0.12) 3px,
+        rgba(0,0,0,0.12) 4px
+      );
+      transition: opacity 0.3s;
+    }
+    #scanlines-layer.active { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <canvas id="tunnel-canvas" aria-hidden="true"></canvas>
+
+  <!-- Machine Liturgy banner — M key cycles through liturgy phrases -->
+  <div id="liturgy-banner" aria-live="polite">
+    <span id="liturgy-text"></span>
+  </div>
+
+  <!-- Status overlay -->
+  <div id="overlay">
+    <span id="overlay-text">00 / 06 &nbsp; signal-bloom</span>
+    <div id="audio-meter-track"><div id="audio-meter-fill"></div></div>
+  </div>
+
+  <!-- Key reference bar -->
+  <div id="key-bar">← → SKETCH &nbsp;|&nbsp; ⇥ LIBRARY &nbsp;|&nbsp; K CODE &nbsp;|&nbsp; E EDIT &nbsp;|&nbsp; P PROMPT &nbsp;|&nbsp; I IMG2IMG &nbsp;|&nbsp; M LITURGY &nbsp;|&nbsp; N NEXT &nbsp;|&nbsp; ⇧M WRITE &nbsp;|&nbsp; B BLACKOUT &nbsp;|&nbsp; H STATUS &nbsp;|&nbsp; L SCANLINES &nbsp;|&nbsp; 0–9 JUMP</div>
+
+  <!-- Code overlay -->
+  <div id="code-overlay" class="hidden">
+    <div id="code-overlay-header">
+      <span id="code-live-indicator"></span>
+      <span id="code-overlay-filename">–</span>
+      <span style="opacity:0.4">×<span id="code-reload-count">0</span></span>
+      <span id="code-edit-indicator">✎ edit · ⌘⇧↵ apply · esc exit</span>
+      <span id="code-edit-status"></span>
+    </div>
+    <code id="code-display"></code>
+    <textarea id="code-editor" autocomplete="off" spellcheck="false"></textarea>
+  </div>
+
+  <!-- Prompt overlay (Phase 2 UI — stubbed for Phase 1) -->
+  <div id="prompt-overlay" class="hidden">
+    <div id="prompt-label">Generate</div>
+    <input id="prompt-input" type="text" placeholder="describe a form…" autocomplete="off" spellcheck="false">
+    <div id="prompt-status">ready</div>
+    <div id="step-track"><div id="step-fill"></div></div>
+  </div>
+
+  <!-- Liturgy text input (Shift+M) -->
+  <div id="liturgy-input-overlay" class="hidden">
+    <div id="liturgy-input-label">Scrolling Text</div>
+    <input id="liturgy-input-field" type="text" placeholder="write your own phrase…" autocomplete="off" spellcheck="false">
+  </div>
+
+  <!-- Global scanlines -->
+  <div id="scanlines-layer" aria-hidden="true"></div>
+
+  <!-- Signal Bloom entry point — Vite processes this as ESM -->
+  <script type="module" src="/src/main.js"></script>
+
+</body>
+</html>

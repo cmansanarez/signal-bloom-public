@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Signal Bloom — Generation Arc Prototype</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --cyan:    #00f0ff;
+    --magenta: #ff00ee;
+    --blue:    #1a1aff;
+    --amber:   #ffaa00;
+    --font:    'Courier New', Courier, monospace;
+  }
+  body {
+    background: #000;
+    color: var(--cyan);
+    font-family: var(--font);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  #header {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 12px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid rgba(0,240,255,.1);
+    font-size: 11px; color: rgba(0,240,255,.4); letter-spacing: .1em;
+  }
+  #header .logo { color: rgba(0,240,255,.8); letter-spacing:.15em; }
+
+  /* ── Main layout ── */
+  #main {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    margin-top: 60px;
+  }
+
+  /* ── Canvas panel ── */
+  #canvas-panel {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+
+  #gen-canvas {
+    width: 360px; height: 360px;
+    border: 1px solid rgba(0,240,255,.2);
+    image-rendering: pixelated;
+    display: block;
+  }
+
+  #canvas-label {
+    font-size: 10px; color: rgba(0,240,255,.3); letter-spacing:.1em;
+    text-align: center;
+  }
+
+  /* ── Control panel ── */
+  #control-panel {
+    width: 320px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .panel-section {
+    border: 1px solid rgba(0,240,255,.12);
+    background: rgba(0,0,8,.8);
+  }
+
+  .panel-section h3 {
+    padding: 7px 12px;
+    border-bottom: 1px solid rgba(0,240,255,.1);
+    font-size: 10px; letter-spacing:.12em; color: rgba(0,240,255,.5);
+  }
+
+  .panel-body { padding: 12px; }
+
+  /* Prompt input */
+  #prompt-input {
+    width: 100%;
+    background: rgba(0,240,255,.04);
+    border: 1px solid rgba(0,240,255,.2);
+    color: var(--cyan);
+    font-family: var(--font); font-size: 13px;
+    padding: 9px 10px; outline: none;
+    transition: border-color 0.2s;
+  }
+  #prompt-input:focus { border-color: rgba(0,240,255,.5); }
+  #prompt-input::placeholder { color: rgba(0,240,255,.25); }
+
+  #hint { font-size:10px; color:rgba(0,240,255,.25); margin-top:6px; }
+
+  /* Dispatch button */
+  #dispatch-btn {
+    width: 100%; margin-top: 10px;
+    padding: 9px;
+    background: rgba(0,240,255,.05);
+    border: 1px solid rgba(0,240,255,.3);
+    color: var(--cyan);
+    font-family: var(--font); font-size: 12px; letter-spacing:.1em;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  #dispatch-btn:hover:not(:disabled) {
+    background: rgba(0,240,255,.12);
+    box-shadow: 0 0 12px rgba(0,240,255,.2);
+  }
+  #dispatch-btn:disabled {
+    opacity: 0.4; cursor: not-allowed;
+  }
+
+  /* Step progress */
+  .step-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: rgba(0,240,255,.5); margin-bottom: 6px;
+  }
+  #step-count { color: var(--cyan); }
+  #status-text { color: rgba(255,0,238,.7); }
+
+  .progress-track {
+    height: 3px; background: rgba(0,240,255,.08);
+    position: relative; overflow: hidden;
+  }
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--cyan));
+    width: 0%;
+    transition: width 0.25s ease-out;
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  /* Event log */
+  #event-log {
+    max-height: 160px; overflow-y: auto;
+    display: flex; flex-direction: column-reverse; gap: 3px;
+    font-size: 11px;
+  }
+  .ev { display: flex; gap: 8px; line-height: 1.6; }
+  .ev-ts { color: rgba(0,240,255,.25); min-width: 38px; }
+  .ev-msg { color: rgba(0,240,255,.55); }
+  .ev-msg.active { color: var(--cyan); }
+  .ev-msg.done   { color: rgba(255,0,238,.7); }
+  .ev-msg.prompt-sent { color: var(--amber); }
+
+  /* Shape selector */
+  .shape-options {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .shape-btn {
+    padding: 5px 10px; background: rgba(0,240,255,.04);
+    border: 1px solid rgba(0,240,255,.15); color: rgba(0,240,255,.5);
+    font-family: var(--font); font-size: 11px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .shape-btn:hover, .shape-btn.selected {
+    background: rgba(0,240,255,.12); color: var(--cyan);
+    border-color: rgba(0,240,255,.5);
+  }
+
+  /* ── SSE event stream simulation display ── */
+  #sse-stream {
+    position: absolute; bottom: 16px; left: 20px;
+    font-size: 10px; color: rgba(0,240,255,.2);
+    letter-spacing: .04em; line-height: 1.8;
+  }
+  .sse-line { animation: sse-fade 4s ease-out forwards; }
+  @keyframes sse-fade { 0%{opacity:.8} 80%{opacity:.4} 100%{opacity:.15} }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <span class="logo">SIGNAL BLOOM</span>
+  <span>PROTOTYPE 02 — AI generation arc simulation</span>
+  <span>noise → crystallization · 20 steps</span>
+</div>
+
+<div id="main">
+
+  <!-- Canvas -->
+  <div id="canvas-panel">
+    <canvas id="gen-canvas" width="360" height="360"></canvas>
+    <div id="canvas-label">AI GENERATION PREVIEW · updating per step</div>
+  </div>
+
+  <!-- Controls -->
+  <div id="control-panel">
+
+    <!-- Prompt input -->
+    <div class="panel-section">
+      <h3>▸ GENERATE</h3>
+      <div class="panel-body">
+        <input id="prompt-input" type="text"
+          placeholder="describe a form…"
+          value="three-dimensional torus primitive">
+        <div id="hint">Enter or click DISPATCH · Esc to cancel</div>
+        <div class="shape-options" style="margin-top:10px">
+          <button class="shape-btn selected" data-shape="torus">torus</button>
+          <button class="shape-btn" data-shape="lattice">lattice</button>
+          <button class="shape-btn" data-shape="sphere">sphere</button>
+          <button class="shape-btn" data-shape="body">body form</button>
+        </div>
+        <button id="dispatch-btn">[ DISPATCH ]</button>
+      </div>
+    </div>
+
+    <!-- Step progress -->
+    <div class="panel-section">
+      <h3>GENERATION PROGRESS</h3>
+      <div class="panel-body">
+        <div class="step-row">
+          <span id="step-count">STEP 0 / 20</span>
+          <span id="status-text">idle</span>
+        </div>
+        <div class="progress-track">
+          <div id="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event log -->
+    <div class="panel-section">
+      <h3>SSE EVENT LOG</h3>
+      <div class="panel-body">
+        <div id="event-log"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SSE stream text (simulated) -->
+<div id="sse-stream"></div>
+
+<script>
+  const canvas  = document.getElementById('gen-canvas');
+  const ctx     = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // ── State ──────────────────────────────────────────────────────────────
+  let generating = false;
+  let cancelFlag = false;
+  let currentShape = 'torus';
+  const TOTAL_STEPS = 20;
+  const STEP_INTERVAL_MS = 500; // simulate ~10s total
+
+  // ── Target shape renderer ──────────────────────────────────────────────
+  function drawTargetShape(shape) {
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    const c = off.getContext('2d');
+    const cx = W / 2, cy = H / 2;
+
+    c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+
+    switch (shape) {
+      case 'torus': {
+        c.shadowColor = '#00f0ff'; c.shadowBlur = 18;
+        c.strokeStyle = '#00f0ff'; c.lineWidth = 5; c.globalAlpha = 0.9;
+        c.beginPath(); c.ellipse(cx, cy, 110, 68, 0, 0, Math.PI * 2); c.stroke();
+        c.lineWidth = 3; c.globalAlpha = 0.55;
+        c.beginPath(); c.ellipse(cx, cy, 70, 40, 0, 0, Math.PI * 2); c.stroke();
+        // depth rings
+        for (let i = 0; i < 6; i++) {
+          const t = i / 5 * Math.PI * 2;
+          const rx = 110, ry = 68;
+          const x = cx + rx * Math.cos(t);
+          const y = cy + ry * Math.sin(t) * 0.6;
+          c.globalAlpha = 0.2;
+          c.beginPath();
+          c.ellipse(x, y, 18, 10, t, 0, Math.PI * 2);
+          c.stroke();
+        }
+        break;
+      }
+      case 'lattice': {
+        c.strokeStyle = '#00f0ff'; c.lineWidth = 1; c.globalAlpha = 0.7;
+        c.shadowColor = '#00f0ff'; c.shadowBlur = 6;
+        const GRID = 7;
+        const SIZE = 120;
+        for (let i = 0; i <= GRID; i++) {
+          for (let j = 0; j <= GRID; j++) {
+            const x = cx - SIZE + (i / GRID) * SIZE * 2;
+            const y = cy - SIZE + (j / GRID) * SIZE * 2;
+            // perspective warp toward center
+            const px = cx + (x - cx) * 0.85 + (j - GRID/2) * 4;
+            const py = cy + (y - cy) * 0.85 + (i - GRID/2) * 2;
+            if (i < GRID) {
+              const nx = cx + ((x + SIZE * 2 / GRID) - cx) * 0.85 + (j - GRID/2) * 4;
+              c.beginPath(); c.moveTo(px, py); c.lineTo(nx, py); c.stroke();
+            }
+            if (j < GRID) {
+              const ny = cy + ((y + SIZE * 2 / GRID) - cy) * 0.85 + (i - GRID/2) * 2;
+              c.beginPath(); c.moveTo(px, py); c.lineTo(px, ny); c.stroke();
+            }
+          }
+        }
+        break;
+      }
+      case 'sphere': {
+        const grad = c.createRadialGradient(cx-30, cy-30, 10, cx, cy, 110);
+        grad.addColorStop(0, 'rgba(0,240,255,0.15)');
+        grad.addColorStop(0.7, 'rgba(26,26,255,0.05)');
+        grad.addColorStop(1, 'transparent');
+        c.fillStyle = grad; c.globalAlpha = 1;
+        c.beginPath(); c.arc(cx, cy, 110, 0, Math.PI * 2); c.fill();
+        c.strokeStyle = '#00f0ff'; c.lineWidth = 2; c.globalAlpha = 0.8;
+        c.shadowColor = '#00f0ff'; c.shadowBlur = 12;
+        c.beginPath(); c.arc(cx, cy, 110, 0, Math.PI * 2); c.stroke();
+        // latitude rings
+        for (let lat = -60; lat <= 60; lat += 30) {
+          const r = Math.cos(lat * Math.PI / 180) * 110;
+          const yoff = Math.sin(lat * Math.PI / 180) * 110;
+          c.globalAlpha = 0.25; c.lineWidth = 1;
+          c.beginPath(); c.ellipse(cx, cy + yoff, r, r * 0.3, 0, 0, Math.PI * 2); c.stroke();
+        }
+        break;
+      }
+      case 'body': {
+        c.strokeStyle = '#ff00ee'; c.lineWidth = 2; c.globalAlpha = 0.75;
+        c.shadowColor = '#ff00ee'; c.shadowBlur = 14;
+        // Abstract body form — two vertical curves converging
+        c.beginPath();
+        c.moveTo(cx - 40, cy - 120);
+        c.bezierCurveTo(cx - 80, cy - 60, cx - 70, cy + 20, cx - 30, cy + 120);
+        c.stroke();
+        c.beginPath();
+        c.moveTo(cx + 40, cy - 120);
+        c.bezierCurveTo(cx + 80, cy - 60, cx + 70, cy + 20, cx + 30, cy + 120);
+        c.stroke();
+        // Head suggestion
+        c.strokeStyle = '#00f0ff'; c.globalAlpha = 0.5;
+        c.shadowColor = '#00f0ff';
+        c.beginPath(); c.ellipse(cx, cy - 130, 28, 34, 0, 0, Math.PI * 2); c.stroke();
+        // Cybernetic detail lines
+        c.lineWidth = 1; c.globalAlpha = 0.3;
+        for (let i = -3; i <= 3; i++) {
+          c.beginPath();
+          c.moveTo(cx - 38, cy + i * 18);
+          c.lineTo(cx + 38, cy + i * 18);
+          c.stroke();
+        }
+        break;
+      }
+    }
+    return c.getImageData(0, 0, W, H);
+  }
+
+  // ── Noise frame generator ──────────────────────────────────────────────
+  function noiseFrame() {
+    const id = ctx.createImageData(W, H);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const n = Math.random();
+      d[i]   = n * 40 + Math.random() * 20;
+      d[i+1] = n * 15;
+      d[i+2] = n * 90 + 30 + Math.random() * 40;
+      d[i+3] = 255;
+    }
+    return id;
+  }
+
+  // ── Blend step ────────────────────────────────────────────────────────
+  function blendStep(noiseId, targetId, progress) {
+    const result = ctx.createImageData(W, H);
+    const nd = noiseId.data, td = targetId.data, rd = result.data;
+    // Ease-out cubic
+    const e = 1 - Math.pow(1 - progress, 3);
+    for (let i = 0; i < rd.length; i += 4) {
+      rd[i]   = nd[i]   * (1 - e) + td[i]   * e;
+      rd[i+1] = nd[i+1] * (1 - e) + td[i+1] * e;
+      rd[i+2] = nd[i+2] * (1 - e) + td[i+2] * e;
+      rd[i+3] = 255;
+    }
+    return result;
+  }
+
+  // ── Glow post-process ─────────────────────────────────────────────────
+  function drawGlowOverlay(step, total) {
+    const progress = step / total;
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = progress * 0.12;
+    const g = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W*0.4);
+    g.addColorStop(0, '#1a1aff');
+    g.addColorStop(0.5, '#00f0ff11');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  }
+
+  // ── Event log ─────────────────────────────────────────────────────────
+  function logEvent(msg, cls = '') {
+    const ts = new Date().toLocaleTimeString('en', { hour12: false, timeStyle: 'medium' });
+    const el = document.createElement('div');
+    el.className = 'ev';
+    el.innerHTML = `<span class="ev-ts">${ts}</span><span class="ev-msg ${cls}">${msg}</span>`;
+    document.getElementById('event-log').prepend(el);
+  }
+
+  function sseFlash(text) {
+    const container = document.getElementById('sse-stream');
+    const line = document.createElement('div');
+    line.className = 'sse-line';
+    line.textContent = text;
+    container.prepend(line);
+    if (container.children.length > 6) container.removeChild(container.lastChild);
+  }
+
+  // ── Main generation simulation ─────────────────────────────────────────
+  async function runGeneration(prompt, shape) {
+    if (generating) return;
+    generating = true; cancelFlag = false;
+
+    document.getElementById('dispatch-btn').disabled = true;
+    document.getElementById('status-text').textContent = '● generating';
+    document.getElementById('status-text').style.color = 'rgba(255,0,238,.7)';
+
+    logEvent(`DISPATCH: "${prompt}"`, 'prompt-sent');
+    sseFlash(`event: generation-start`);
+    sseFlash(`data: {"prompt":"${prompt.substring(0,30)}..."}`);
+
+    const targetId = drawTargetShape(shape);
+
+    for (let step = 0; step <= TOTAL_STEPS; step++) {
+      if (cancelFlag) break;
+
+      const progress = step / TOTAL_STEPS;
+      const noise = noiseFrame();
+      const blended = blendStep(noise, targetId, progress);
+      ctx.putImageData(blended, 0, 0);
+      drawGlowOverlay(step, TOTAL_STEPS);
+
+      // Update UI
+      document.getElementById('step-count').textContent = `STEP ${step} / ${TOTAL_STEPS}`;
+      document.getElementById('progress-fill').style.width = `${(step / TOTAL_STEPS) * 100}%`;
+      document.getElementById('canvas-label').textContent =
+        step === 0 ? 'NOISE · step 0' :
+        step < TOTAL_STEPS ? `STEP ${step} / ${TOTAL_STEPS} · crystallizing` :
+        'GENERATION COMPLETE';
+
+      // SSE simulation
+      sseFlash(`event: step-preview  data: {"step":${step},"total":${TOTAL_STEPS}}`);
+      if (step % 4 === 0 && step > 0) {
+        logEvent(`step-preview → step ${step}/${TOTAL_STEPS}`, 'active');
+      }
+
+      await delay(STEP_INTERVAL_MS);
+    }
+
+    if (!cancelFlag) {
+      logEvent('image-ready → /generated/latest.png', 'done');
+      sseFlash(`event: image-ready`);
+      sseFlash(`data: {"src":"/generated/latest.png"}`);
+      document.getElementById('status-text').textContent = '✓ complete';
+      document.getElementById('status-text').style.color = 'rgba(0,240,255,.6)';
+    } else {
+      logEvent('generation cancelled', '');
+      document.getElementById('status-text').textContent = 'cancelled';
+    }
+
+    generating = false;
+    document.getElementById('dispatch-btn').disabled = false;
+  }
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // ── Init canvas ────────────────────────────────────────────────────────
+  function drawIdle() {
+    ctx.fillStyle = '#000610'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(0,240,255,0.04)';
+    for (let i = 0; i < 30; i++) {
+      const x = Math.random() * W, y = Math.random() * H;
+      const w = Math.random() * 80 + 10, h = Math.random() * 3 + 1;
+      ctx.fillRect(x, y, w, h);
+    }
+    ctx.fillStyle = 'rgba(0,240,255,0.5)';
+    ctx.font = '11px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('IDLE — dispatch a prompt to generate', W/2, H/2);
+  }
+
+  drawIdle();
+  logEvent('prototype ready · dispatch a prompt to simulate', '');
+
+  // ── Dispatch button ────────────────────────────────────────────────────
+  document.getElementById('dispatch-btn').addEventListener('click', () => {
+    const prompt = document.getElementById('prompt-input').value.trim();
+    if (!prompt || generating) return;
+    runGeneration(prompt, currentShape);
+  });
+
+  document.getElementById('prompt-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const prompt = e.target.value.trim();
+      if (prompt && !generating) runGeneration(prompt, currentShape);
+    }
+    if (e.key === 'Escape' && generating) {
+      cancelFlag = true;
+    }
+  });
+
+  // ── Shape selector ─────────────────────────────────────────────────────
+  document.querySelectorAll('.shape-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      currentShape = btn.dataset.shape;
+      const input = document.getElementById('prompt-input');
+      const prompts = {
+        torus:   'three-dimensional torus primitive',
+        lattice: 'wireframe geometric lattice structure',
+        sphere:  'luminous sphere with latitude lines',
+        body:    'cybernetic body form, queer silhouette',
+      };
+      input.value = prompts[currentShape] || currentShape;
+    });
+  });
+</script>
+</body>
+</html>

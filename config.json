@@ -1,0 +1,13 @@
+{
+  "stylePrompt": "NoirmakStyle",
+  "loraName": "NoirmakStyle.safetensors",
+  "styleLoraStrength": 0.8,
+  "styleModifiers": {
+    "sculpture": "hellenistic marble sculpture, classical statue, weathered stone texture, museum artifact",
+    "angel":     "ethereal wings, celestial figure, divine glow, luminous feathers, heavenly presence",
+    "cyber":     "chrome surfaces, futuristic technology, synthetic materials, holographic interfaces, machine augmentation",
+    "floral":    "organic botanical forms, blooming flowers, petals, vines, natural growth patterns"
+  },
+  "activeModifier": null,
+  "imgImgDenoise": 0.80
+}
