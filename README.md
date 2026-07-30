@@ -89,7 +89,7 @@ for live coding, AI generation, and improvisational performance that other
 artists can study, adapt, and push somewhere I wouldn't have taken it. The
 value isn't a specific aesthetic — it's the framework underneath one.
 
-## Extending it — sketches and your own media
+## Extending it — sketches, media, and the 3D star models
 
 Sketches live in `sketches/` as plain `.js` files — Hydra code run directly,
 no build step. Naming convention: `nn-descriptive-name.js`, two-digit prefix,
@@ -106,6 +106,11 @@ directories are gitignored by default so your own media stays yours.
 `window.micLevel` (0–1 RMS) and `window.micFFT` (per-band frequency data) are
 available in every sketch for audio reactivity — see `01-hello-hydra.js` for
 the basic hook or `04-audio-reactive.js` for bass/mid/high band-splitting.
+
+The seven floating shapes drifting through the tunnel (`G` to toggle, `R` to
+spin) are `.glb` models loaded from `assets/3D/` — swap in your own or
+change how many there are; see
+[`assets/3D/README.md`](assets/3D/README.md) for what to edit.
 
 ## Architecture
 

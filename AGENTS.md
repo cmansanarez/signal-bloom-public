@@ -45,7 +45,8 @@ The tunnel walls are Hydra textures, live-coded in real time. The performer modu
 Two prior projects are the foundation of Signal Bloom. Do not reinvent what already exists in them.
 
 **NoirMak VJ System**
-Path: `/Users/cameronmansanarez/Documents/Documents - Cameron Mac mini/VSCode_Files/NoirMak_VJSystem_Local-main`
+A private prior project (not public) — already fully ported into this repo,
+so there's nothing left to port. Listed here for lineage/credit.
 
 What to use:
 - `watcher.js` — Node.js HTTP server + SSE hot-reload. The Signal Bloom bridge extends this.

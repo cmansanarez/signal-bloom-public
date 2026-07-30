@@ -17,7 +17,7 @@ Wait for it to print that it's serving on `127.0.0.1:8188`.
 
 ### 2. Signal Bloom bridge + Vite  (Terminal 2)
 ```bash
-cd "/Users/cammacmini/Documents/Documents - Cameron Mac mini/VSCode_Files/Signal_Bloom"
+cd path/to/signal-bloom   # wherever you cloned this repo
 npm run dev
 ```
 `npm run dev` launches **both** the bridge (`watcher.js` → `:3001`) and Vite (`:5173`) together — there is no separate "activate the bridge" step. The `predev` hook auto-kills anything stale on those ports first.
@@ -59,6 +59,10 @@ Navigate Chrome to **http://localhost:5173** (the Vite URL — it proxies `/prom
 | `B` | **Blackout** — instant hush, the emergency brake |
 | `L` | Scanlines overlay (toggle) |
 | `H` | Status overlay (toggle) |
+
+The star models themselves live in `assets/3D/` — swap them for your own
+`.glb` files or add more; see [`assets/3D/README.md`](assets/3D/README.md)
+for exactly what to edit and where.
 
 ### Code overlay
 | Key | Action |

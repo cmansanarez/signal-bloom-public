@@ -6,7 +6,7 @@
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cmansanarez/Signal_Bloom.git"
+    "url": "https://github.com/cmansanarez/signal-bloom-public.git"
   },
   "engines": {
     "node": ">=22"
