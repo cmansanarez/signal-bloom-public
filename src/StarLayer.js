@@ -19,13 +19,13 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
 // ── Asset list ────────────────────────────────────────────────────────────────
 const GLB_PATHS = [
-  '/assets/3D/polyhedron_02.glb',
-  '/assets/3D/polyhedron_03.glb',
-  '/assets/3D/polyhedron_04.glb',
-  '/assets/3D/polyhedron_05.glb',
-  '/assets/3D/polyhedron_06.glb',
-  '/assets/3D/polyhedron_07.glb',
-  '/assets/3D/polyhedron_08.glb',
+  '/assets/3D/signal-bloom-primitive-01.glb',
+  '/assets/3D/signal-bloom-primitive-02.glb',
+  '/assets/3D/signal-bloom-primitive-03.glb',
+  '/assets/3D/signal-bloom-primitive-04.glb',
+  '/assets/3D/signal-bloom-primitive-05.glb',
+  '/assets/3D/signal-bloom-primitive-06.glb',
+  '/assets/3D/signal-bloom-primitive-07.glb',
 ]
 
 // Rest positions arranged in a loose ring around the tunnel perimeter.
