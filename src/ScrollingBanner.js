@@ -1,4 +1,4 @@
-// MachineLiturgy.js — Signal Bloom
+// ScrollingBanner.js — Signal Bloom
 // Scrolling banner layer. Each phrase is simultaneously audience-visible text,
 // conceptual cue for the performer, and seed language for AI generation.
 //
@@ -16,10 +16,10 @@ const PHRASES = [
   'EDIT THE PHRASES ARRAY IN THIS FILE FOR A FIXED SET INSTEAD.',
 ]
 
-export class MachineLiturgy {
+export class ScrollingBanner {
   constructor() {
-    this._banner  = document.getElementById('liturgy-banner')
-    this._textEl  = document.getElementById('liturgy-text')
+    this._banner  = document.getElementById('scrolling-banner')
+    this._textEl  = document.getElementById('banner-text')
     this._active  = false
     this._x       = 0
     this._speed   = 0      // px/s, recalculated per phrase
@@ -29,7 +29,7 @@ export class MachineLiturgy {
     this._phraseIdx = 0
   }
 
-  // Trigger a specific text string, or advance to the next liturgy phrase if omitted.
+  // Trigger a specific text string, or advance to the next banner phrase if omitted.
   trigger(phrase) {
     const text = (phrase ?? PHRASES[this._phraseIdx++ % PHRASES.length]).toUpperCase()
     if (this._active) {
@@ -104,5 +104,5 @@ export class MachineLiturgy {
   }
 }
 
-// Expose the full phrase list so external code can use liturgy text as prompt seeds.
-export { PHRASES as LITURGY_PHRASES }
+// Expose the full phrase list so external code can use banner text as prompt seeds.
+export { PHRASES as BANNER_PHRASES }

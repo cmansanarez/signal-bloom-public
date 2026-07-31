@@ -385,24 +385,24 @@ function toggleOverlay() {
   el.classList.toggle('hidden', !overlayVisible)
 }
 
-// ── Liturgy text input (Shift+M) ─────────────────────────────────────────────
+// ── Banner text input (Shift+M) ───────────────────────────────────────────────
 
-let liturgyInputVisible = false
+let bannerInputVisible = false
 
-function openLiturgyInput() {
-  const overlay = document.getElementById('liturgy-input-overlay')
-  const input   = document.getElementById('liturgy-input-field')
+function openBannerInput() {
+  const overlay = document.getElementById('banner-input-overlay')
+  const input   = document.getElementById('banner-input-field')
   if (!overlay) return
-  liturgyInputVisible = true
+  bannerInputVisible = true
   overlay.classList.remove('hidden')
   setTimeout(() => { input?.focus(); input?.select() }, 0)
 }
 
-function closeLiturgyInput() {
-  const overlay = document.getElementById('liturgy-input-overlay')
-  const input   = document.getElementById('liturgy-input-field')
+function closeBannerInput() {
+  const overlay = document.getElementById('banner-input-overlay')
+  const input   = document.getElementById('banner-input-field')
   if (!overlay) return
-  liturgyInputVisible = false
+  bannerInputVisible = false
   overlay.classList.add('hidden')
   input?.blur()
 }
@@ -501,17 +501,17 @@ export function initKeyboard() {
     e.stopPropagation()
   })
 
-  // Liturgy text input — Enter sends to banner, Escape closes
-  const liturgyInput = document.getElementById('liturgy-input-field')
-  liturgyInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeLiturgyInput(); e.stopPropagation(); return }
+  // Banner text input — Enter sends to banner, Escape closes
+  const bannerInput = document.getElementById('banner-input-field')
+  bannerInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeBannerInput(); e.stopPropagation(); return }
     if (e.key === 'Enter') {
-      const text = liturgyInput.value.trim()
+      const text = bannerInput.value.trim()
       if (text) {
-        window.dispatchEvent(new CustomEvent('liturgy-custom', { detail: { text } }))
-        liturgyInput.value = ''
+        window.dispatchEvent(new CustomEvent('banner-custom', { detail: { text } }))
+        bannerInput.value = ''
       }
-      closeLiturgyInput()
+      closeBannerInput()
       e.stopPropagation(); return
     }
     e.stopPropagation()
@@ -548,11 +548,11 @@ export function initKeyboard() {
   document.addEventListener('keydown', (e) => {
     // Suspend global keys while typing in any text input overlay
     if (document.activeElement === input) return
-    if (document.activeElement === liturgyInput) return
+    if (document.activeElement === bannerInput) return
     if (document.activeElement === codeEditor) return
 
     if (e.key === 'Escape') {
-      if (liturgyInputVisible) { closeLiturgyInput(); return }
+      if (bannerInputVisible) { closeBannerInput(); return }
       if (promptVisible) closePrompt()
       return
     }
@@ -580,18 +580,18 @@ export function initKeyboard() {
       case 'l': case 'L':  toggleScanlines(); break
       case 'p': case 'P':  togglePrompt(); break
       case 'i': case 'I':  toggleImgImg(); break
-      case 'ArrowUp':   window.dispatchEvent(new CustomEvent('star-z-shift', { detail: { dir:  1 } })); e.preventDefault(); break
-      case 'ArrowDown': window.dispatchEvent(new CustomEvent('star-z-shift', { detail: { dir: -1 } })); e.preventDefault(); break
-      case 'g': case 'G':  window.dispatchEvent(new Event('toggle-stars')); break
+      case 'ArrowUp':   window.dispatchEvent(new CustomEvent('primitive-z-shift', { detail: { dir:  1 } })); e.preventDefault(); break
+      case 'ArrowDown': window.dispatchEvent(new CustomEvent('primitive-z-shift', { detail: { dir: -1 } })); e.preventDefault(); break
+      case 'g': case 'G':  window.dispatchEvent(new Event('toggle-primitives')); break
       case 'r': case 'R':  window.dispatchEvent(new Event('toggle-form-rotate')); break
       case 't': case 'T':  window.dispatchEvent(new Event('toggle-flat-mode')); break
       case 'a': case 'A':  window.dispatchEvent(new Event('toggle-size-attenuation')); break
       case '*':            window.dispatchEvent(new Event('toggle-bloom')); break   // Shift+8 — bloom on/off
       case 'm': case 'M':
-        if (e.shiftKey) openLiturgyInput()
-        else window.dispatchEvent(new Event('toggle-liturgy'))
+        if (e.shiftKey) openBannerInput()
+        else window.dispatchEvent(new Event('toggle-banner'))
         break
-      case 'n': case 'N':  window.dispatchEvent(new Event('next-liturgy')); break
+      case 'n': case 'N':  window.dispatchEvent(new Event('next-banner')); break
       case 'c': case 'C':  { const i = sketchByName('webcam'); if (i >= 0) loadSketch(i); break }
       case 's': case 'S':  { const i = sketchByName('screen'); if (i >= 0) loadSketch(i); break }
       case 'v': case 'V':  { const i = sketchByName('video');  if (i >= 0) loadSketch(i); break }

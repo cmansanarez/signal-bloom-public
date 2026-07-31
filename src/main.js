@@ -24,9 +24,9 @@ import { HydraManager }        from './HydraManager.js'
 import { HydraFormProcessor }  from './HydraFormProcessor.js'
 import { MicInput }            from './MicInput.js'
 import { AIFormLayer }         from './ai-forms.js'
-import { StarLayer }           from './StarLayer.js'
+import { PrimitiveLayer }      from './PrimitiveLayer.js'
 import { init as sketchInit, onSketchLoad, updateOverlay } from './sketch-loader.js'
-import { MachineLiturgy } from './MachineLiturgy.js'
+import { ScrollingBanner } from './ScrollingBanner.js'
 
 // ── Tunnel constants (match Orpheus Protocol Fracture scene) ──────────────────
 const SEGMENT_COUNT   = 22
@@ -325,7 +325,7 @@ let prevBass        = 0
 let glitchIntensity = 0
 let glitchCooldown  = 3.0 + Math.random() * 3.0
 let aiLayer         = null
-let starLayer       = null
+let primitiveLayer  = null
 
 // ── Glitch system ─────────────────────────────────────────────────────────────
 function updateGlitch(delta) {
@@ -561,8 +561,8 @@ function startRenderLoop(mic) {
     // Advance crystallizing / floating AI forms
     if (aiLayer) aiLayer.tick(performance.now())
 
-    // Animate star polyhedra
-    if (starLayer) starLayer.tick(delta, elapsed)
+    // Animate 3D primitives
+    if (primitiveLayer) primitiveLayer.tick(delta, elapsed)
 
     // Render form scene to isolated RT — the chroma shader composites it over
     // the tunnel with matching aberration so both share the same optical space.
@@ -609,12 +609,12 @@ async function boot() {
   aiLayer = new AIFormLayer(formScene, formProcessor)
   connectGenerationEvents(aiLayer)
 
-  // 6. Star polyhedra — load all glbs, wire G (toggle) and R (rotation)
-  starLayer = new StarLayer(scene)
-  await starLayer.load()
-  window.addEventListener('toggle-stars',       () => starLayer.toggle())
-  window.addEventListener('toggle-form-rotate', () => starLayer.toggleRotation())
-  window.addEventListener('star-z-shift',       (e) => starLayer.shiftZ(e.detail.dir))
+  // 6. 3D primitives — load all glbs, wire G (toggle) and R (rotation)
+  primitiveLayer = new PrimitiveLayer(scene)
+  await primitiveLayer.load()
+  window.addEventListener('toggle-primitives',   () => primitiveLayer.toggle())
+  window.addEventListener('toggle-form-rotate',  () => primitiveLayer.toggleRotation())
+  window.addEventListener('primitive-z-shift',   (e) => primitiveLayer.shiftZ(e.detail.dir))
 
   // 7. Flat-mode toggle — sketch-loader's keymap dispatches this
   window.addEventListener('toggle-flat-mode', () => setFlatMode(!flatMode))
@@ -627,14 +627,14 @@ async function boot() {
   // while the pass is disabled, so it picks up seamlessly when toggled back on.
   window.addEventListener('toggle-bloom', () => { bloomPass.enabled = !bloomPass.enabled })
 
-  // 8. Machine Liturgy banner — M toggles on/off, N advances to the next phrase
-  const liturgy = new MachineLiturgy()
-  window.addEventListener('toggle-liturgy', () => liturgy.toggle())
-  window.addEventListener('next-liturgy',   () => liturgy.next())
-  window.addEventListener('liturgy-custom', (e) => liturgy.trigger(e.detail.text))
+  // 8. Scrolling banner — M toggles on/off, N advances to the next phrase
+  const banner = new ScrollingBanner()
+  window.addEventListener('toggle-banner', () => banner.toggle())
+  window.addEventListener('next-banner',   () => banner.next())
+  window.addEventListener('banner-custom', (e) => banner.trigger(e.detail.text))
   // Expose globally so the performer can trigger specific phrases from the console:
-  // window.liturgy.trigger('your phrase here')
-  window.liturgy = liturgy
+  // window.banner.trigger('your phrase here')
+  window.banner = banner
 
   // 7. Render
   clock.start()

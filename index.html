@@ -359,8 +359,8 @@
     }
     #prompt-overlay.docked #prompt-status { color: var(--cyan); }
 
-    /* ── Machine Liturgy banner (M to cycle) ───────────────────────────── */
-    #liturgy-banner {
+    /* ── Scrolling banner (M to cycle) ───────────────────────────────────── */
+    #scrolling-banner {
       position: fixed;
       top: 0; left: 0;
       width: 100%;
@@ -373,7 +373,7 @@
       white-space: nowrap;
     }
 
-    #liturgy-text {
+    #banner-text {
       display: inline-block;
       font-family: 'Courier New', Courier, monospace;
       font-size: clamp(20px, 2.2vw, 36px);
@@ -388,8 +388,8 @@
         0 0 48px rgba(0, 240, 255, 0.2);
     }
 
-    /* ── Liturgy input overlay (Shift+M) ───────────────────────────────── */
-    #liturgy-input-overlay {
+    /* ── Banner input overlay (Shift+M) ──────────────────────────────────── */
+    #banner-input-overlay {
       position: fixed;
       bottom: 7rem; left: 50%;
       transform: translateX(-50%);
@@ -403,15 +403,15 @@
       gap: 0.5rem;
       transition: opacity 0.2s;
     }
-    #liturgy-input-overlay.hidden { opacity: 0; pointer-events: none; }
+    #banner-input-overlay.hidden { opacity: 0; pointer-events: none; }
 
-    #liturgy-input-label {
+    #banner-input-label {
       font-size: 0.55rem;
       letter-spacing: 0.22em;
       color: var(--magenta);
       text-transform: uppercase;
     }
-    #liturgy-input-field {
+    #banner-input-field {
       background: transparent;
       border: none;
       border-bottom: 1px solid var(--magenta);
@@ -424,7 +424,7 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
-    #liturgy-input-field::placeholder { color: rgba(255,0,238,0.35); text-transform: uppercase; }
+    #banner-input-field::placeholder { color: rgba(255,0,238,0.35); text-transform: uppercase; }
 
     /* ── Scanlines global (L) ───────────────────────────────────────────── */
     #scanlines-layer {
@@ -449,9 +449,9 @@
 
   <canvas id="tunnel-canvas" aria-hidden="true"></canvas>
 
-  <!-- Machine Liturgy banner — M key cycles through liturgy phrases -->
-  <div id="liturgy-banner" aria-live="polite">
-    <span id="liturgy-text"></span>
+  <!-- Scrolling banner — M key cycles through banner phrases -->
+  <div id="scrolling-banner" aria-live="polite">
+    <span id="banner-text"></span>
   </div>
 
   <!-- Status overlay -->
@@ -461,7 +461,7 @@
   </div>
 
   <!-- Key reference bar -->
-  <div id="key-bar">← → SKETCH &nbsp;|&nbsp; ⇥ LIBRARY &nbsp;|&nbsp; K CODE &nbsp;|&nbsp; E EDIT &nbsp;|&nbsp; P PROMPT &nbsp;|&nbsp; I IMG2IMG &nbsp;|&nbsp; M LITURGY &nbsp;|&nbsp; N NEXT &nbsp;|&nbsp; ⇧M WRITE &nbsp;|&nbsp; B BLACKOUT &nbsp;|&nbsp; H STATUS &nbsp;|&nbsp; L SCANLINES &nbsp;|&nbsp; 0–9 JUMP</div>
+  <div id="key-bar">← → SKETCH &nbsp;|&nbsp; ⇥ LIBRARY &nbsp;|&nbsp; K CODE &nbsp;|&nbsp; E EDIT &nbsp;|&nbsp; P PROMPT &nbsp;|&nbsp; I IMG2IMG &nbsp;|&nbsp; M BANNER &nbsp;|&nbsp; N NEXT &nbsp;|&nbsp; ⇧M WRITE &nbsp;|&nbsp; B BLACKOUT &nbsp;|&nbsp; H STATUS &nbsp;|&nbsp; L SCANLINES &nbsp;|&nbsp; 0–9 JUMP</div>
 
   <!-- Code overlay -->
   <div id="code-overlay" class="hidden">
@@ -484,10 +484,10 @@
     <div id="step-track"><div id="step-fill"></div></div>
   </div>
 
-  <!-- Liturgy text input (Shift+M) -->
-  <div id="liturgy-input-overlay" class="hidden">
-    <div id="liturgy-input-label">Scrolling Text</div>
-    <input id="liturgy-input-field" type="text" placeholder="write your own phrase…" autocomplete="off" spellcheck="false">
+  <!-- Banner text input (Shift+M) -->
+  <div id="banner-input-overlay" class="hidden">
+    <div id="banner-input-label">Scrolling Text</div>
+    <input id="banner-input-field" type="text" placeholder="write your own phrase…" autocomplete="off" spellcheck="false">
   </div>
 
   <!-- Global scanlines -->

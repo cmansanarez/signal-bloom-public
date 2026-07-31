@@ -52,17 +52,28 @@ Navigate Chrome to **http://localhost:5173** (the Vite URL — it proxies `/prom
 | `T` | **Flat mode** — collapse the tunnel into a full-frame Hydra wall (toggle) |
 | `A` | Point-cloud size attenuation (toggle) — perspective-scaled vs. flat screen-space points |
 | `*` | **Bloom** (Shift+8) — toggle the global bloom/glow post-effect; bring it in on peaks, drop it otherwise |
-| `G` | **Star polyhedra** — toggle the star shapes visible/hidden in the tunnel |
-| `R` | **Rotation** — toggle spin on star polyhedra + AI form (toggle) |
-| `↑` | Move star cluster toward camera (appears larger) |
-| `↓` | Move star cluster away from camera (appears smaller) |
+| `G` | **3D primitives** — toggle the floating models visible/hidden in the tunnel |
+| `R` | **Rotation** — toggle spin on the 3D primitives + AI form (toggle) |
+| `↑` | Move the primitive cluster toward camera (appears larger) |
+| `↓` | Move the primitive cluster away from camera (appears smaller) |
 | `B` | **Blackout** — instant hush, the emergency brake |
 | `L` | Scanlines overlay (toggle) |
 | `H` | Status overlay (toggle) |
 
-The star models themselves live in `assets/3D/` — swap them for your own
+The 3D models themselves live in `assets/3D/` — swap them for your own
 `.glb` files or add more; see [`assets/3D/README.md`](assets/3D/README.md)
 for exactly what to edit and where.
+
+### Scrolling banner
+| Key | Action |
+|---|---|
+| `M` | Toggle the scrolling banner on/off |
+| `N` | Advance to the next banner phrase (only while the banner is up) |
+| `Shift+M` | Open a text input to type and send your own phrase live |
+
+Default phrases are placeholders — edit the `PHRASES` array in
+`src/ScrollingBanner.js` for a fixed set, or drive it entirely via
+`Shift+M` during a set.
 
 ### Code overlay
 | Key | Action |
@@ -95,6 +106,12 @@ keys silently no-op otherwise.
 | `Esc` | Close the prompt input |
 | `↑` | Previous prompt from history |
 | `↓` | Next prompt from history |
+
+### Banner text input (while the field opened by Shift+M is focused)
+| Key | Action |
+|---|---|
+| `Enter` | Send the phrase to the banner and close the input |
+| `Esc` | Close the input without sending |
 
 ---
 

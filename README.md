@@ -89,7 +89,7 @@ for live coding, AI generation, and improvisational performance that other
 artists can study, adapt, and push somewhere I wouldn't have taken it. The
 value isn't a specific aesthetic — it's the framework underneath one.
 
-## Extending it — sketches, media, and the 3D star models
+## Extending it — sketches, media, and 3D primitives
 
 Sketches live in `sketches/` as plain `.js` files — Hydra code run directly,
 no build step. Naming convention: `nn-descriptive-name.js`, two-digit prefix,

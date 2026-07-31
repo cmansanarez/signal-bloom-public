@@ -1,10 +1,14 @@
 /**
- * StarLayer.js — Signal Bloom
- * Loads polyhedron .glb assets into the Three.js tunnel scene.
+ * PrimitiveLayer.js — Signal Bloom
+ * Loads .glb model assets into the Three.js tunnel scene.
  *
- * Animation model (per star):
+ * This is an example of dropping arbitrary 3D geometry into the tunnel as a
+ * decorative layer — swap assets/3D/*.glb for whatever suits the piece you're
+ * building; nothing about this layer assumes a specific shape.
+ *
+ * Animation model (per primitive):
  *   • XZ orbital drift around a perimeter rest position (wider radii, stay off-center)
- *   • Y-axis buoyant float (per-star phase + speed)
+ *   • Y-axis buoyant float (per-primitive phase + speed)
  *   • Mic-reactive emissive pulse via EMA-smoothed glowPulse
  *   • Optional Y/X spin when rotation is toggled (R key)
  *   • Z-offset controlled by ↑/↓ arrow keys (shiftZ)
@@ -41,7 +45,7 @@ const REST = [
   { x:  0.2, y:  2.8, z: -14 },   // top-center
 ]
 
-// Emissive accent colors — one per star, drawn from Signal Bloom palette
+// Emissive accent colors — one per primitive, drawn from Signal Bloom palette
 const EMISSIVE = [
   new THREE.Color(0x00f0ff),   // cyan
   new THREE.Color(0xff00ee),   // magenta
@@ -52,27 +56,27 @@ const EMISSIVE = [
   new THREE.Color(0xffaa00),   // amber (accent)
 ]
 
-const BASE_SCALE   = 1.0   // overall size — tune if glbs are authored at a different unit scale
-const STAR_OPACITY = 0.92  // glass-chrome: high enough to show metallic depth, not fully opaque
+const BASE_SCALE        = 1.0   // overall size — tune if glbs are authored at a different unit scale
+const PRIMITIVE_OPACITY = 0.92  // glass-chrome: high enough to show metallic depth, not fully opaque
 const FLOAT_AMP          = 0.92  // Y sine-float amplitude (world units)
-const CENTER_EXCL_RADIUS = 2.6   // keep stars off the tunnel axis — wider so nothing grazes center
-const MIN_XY_SEP         = 2.4   // minimum XY separation between stars (7 stars can fit at this spacing)
+const CENTER_EXCL_RADIUS = 2.6   // keep primitives off the tunnel axis — wider so nothing grazes center
+const MIN_XY_SEP         = 2.4   // minimum XY separation between primitives (7 can fit at this spacing)
 const MIC_SCALE    = 0.60  // max scale boost at full mic level
 const Z_SHIFT_STEP = 1.8   // world units per ↑/↓ key press
-const Z_OFFSET_MIN = -18   // how far back stars can be pushed
-const Z_OFFSET_MAX = 7     // how close stars can come (nearest star stays at ~z=-2)
+const Z_OFFSET_MIN = -18   // how far back primitives can be pushed
+const Z_OFFSET_MAX = 7     // how close primitives can come (nearest stays at ~z=-2)
 
-export class StarLayer {
+export class PrimitiveLayer {
   constructor(scene) {
-    this.scene     = scene
-    this.stars     = []
+    this.scene      = scene
+    this.primitives = []
     this.visible   = false
     this.rotating  = false
     this.glowPulse = 0
     this.loaded    = false
     this.zOffset   = 0
 
-    // Lights are added to the scene in load() so they exist whether or not stars are visible.
+    // Lights are added to the scene in load() so they exist whether or not primitives are visible.
     // They only affect MeshStandardMaterial — PointsMaterial / MeshBasicMaterial are unaffected.
     this.ambientLight    = null
     this.hemisphereLight = null
@@ -118,9 +122,9 @@ export class StarLayer {
           (gltf) => {
             const root = gltf.scene
 
-            // Per-star scale variety
-            const starScale = BASE_SCALE * (0.82 + Math.random() * 0.36)
-            root.scale.setScalar(starScale)
+            // Per-primitive scale variety
+            const primitiveScale = BASE_SCALE * (0.82 + Math.random() * 0.36)
+            root.scale.setScalar(primitiveScale)
             root.position.set(REST[i].x, REST[i].y, REST[i].z)
             root.visible = false
 
@@ -140,7 +144,7 @@ export class StarLayer {
                 // chrome character while the diffuse component catches the hemisphere light.
                 mat.metalness         = 0.72
                 mat.roughness         = 0.22
-                mat.opacity           = STAR_OPACITY
+                mat.opacity           = PRIMITIVE_OPACITY
                 mat.transparent       = true
                 mat.side              = THREE.DoubleSide
                 mat.depthWrite        = false
@@ -155,9 +159,9 @@ export class StarLayer {
             })
 
             this.scene.add(root)
-            this.stars.push({
+            this.primitives.push({
               root,
-              starScale,
+              primitiveScale,
               emissiveColor,
               phase:       Math.random() * Math.PI * 2,
               floatSpd:    0.04 + Math.random() * 0.05,   // 0.04–0.09 — slow buoyant float
@@ -172,19 +176,19 @@ export class StarLayer {
             resolve()
           },
           undefined,
-          (err) => { console.warn(`[StarLayer] Failed to load ${path}`, err); resolve() }
+          (err) => { console.warn(`[PrimitiveLayer] Failed to load ${path}`, err); resolve() }
         )
       })
     )
 
     await Promise.all(loads)
     this.loaded = true
-    console.log(`[StarLayer] ${this.stars.length} star(s) ready`)
+    console.log(`[PrimitiveLayer] ${this.primitives.length} primitive(s) ready`)
   }
 
   toggle() {
     this.visible = !this.visible
-    for (const star of this.stars) star.root.visible = this.visible
+    for (const primitive of this.primitives) primitive.root.visible = this.visible
   }
 
   toggleRotation() {
@@ -195,7 +199,7 @@ export class StarLayer {
   // ↓ key: dir = -1 (move back away from camera, appears smaller)
   shiftZ(dir) {
     this.zOffset = Math.max(Z_OFFSET_MIN, Math.min(Z_OFFSET_MAX, this.zOffset + dir * Z_SHIFT_STEP))
-    // Keep lights tracking the star cluster depth
+    // Keep lights tracking the primitive cluster depth
     if (this.cyanLight)    this.cyanLight.position.z    = -11 + this.zOffset
     if (this.magentaLight) this.magentaLight.position.z = -12 + this.zOffset
   }
@@ -211,30 +215,30 @@ export class StarLayer {
     if (this.cyanLight)    this.cyanLight.intensity    = 2.2 + this.glowPulse * 3.5
     if (this.magentaLight) this.magentaLight.intensity = 1.8 + this.glowPulse * 2.8
 
-    for (let i = 0; i < this.stars.length; i++) {
-      const star = this.stars[i]
+    for (let i = 0; i < this.primitives.length; i++) {
+      const primitive = this.primitives[i]
       const rest = REST[i]
 
       // Primary orbital drift — slow, wide sweep around rest position
-      star.orbitAngle += delta * star.orbitSpd
-      const ox = Math.cos(star.orbitAngle)       * star.orbitR * (1.0 + this.glowPulse * 0.35)
-      const oz = Math.sin(star.orbitAngle * 0.6) * star.orbitR * 0.3
+      primitive.orbitAngle += delta * primitive.orbitSpd
+      const ox = Math.cos(primitive.orbitAngle)       * primitive.orbitR * (1.0 + this.glowPulse * 0.35)
+      const oz = Math.sin(primitive.orbitAngle * 0.6) * primitive.orbitR * 0.3
 
       // Secondary meander — different frequency ratio so the combined path is never a clean circle
-      star.driftAngle += delta * star.driftSpd
-      const mx = Math.cos(star.driftAngle * 1.4 + Math.PI * 0.5) * star.driftR
-      const my = Math.sin(star.driftAngle        + Math.PI * 1.1) * star.driftR * 0.6
+      primitive.driftAngle += delta * primitive.driftSpd
+      const mx = Math.cos(primitive.driftAngle * 1.4 + Math.PI * 0.5) * primitive.driftR
+      const my = Math.sin(primitive.driftAngle        + Math.PI * 1.1) * primitive.driftR * 0.6
 
       // Y buoyant float
-      const fy = Math.sin(elapsed * star.floatSpd + star.phase) * FLOAT_AMP
+      const fy = Math.sin(elapsed * primitive.floatSpd + primitive.phase) * FLOAT_AMP
 
       let px = rest.x + ox + mx
       let py = rest.y + fy + my
       const pz = rest.z + oz + this.zOffset
 
-      // Center exclusion — push stars off the tunnel axis so the AI form zone stays clear.
-      // Quadratic scaling means stars near center get a decisive push; stars grazing the
-      // edge get only a gentle nudge. Fallback normal uses REST quadrant so a star at
+      // Center exclusion — push primitives off the tunnel axis so the AI form zone stays clear.
+      // Quadratic scaling means primitives near center get a decisive push; primitives grazing
+      // the edge get only a gentle nudge. Fallback normal uses REST quadrant so a primitive at
       // exactly (0,0) still gets sent in the right direction.
       const xyDist = Math.sqrt(px * px + py * py)
       if (xyDist < CENTER_EXCL_RADIUS) {
@@ -246,11 +250,11 @@ export class StarLayer {
         py += ny * push
       }
 
-      // XY separation — stars at different Z depths still visually overlap in screen space.
+      // XY separation — primitives at different Z depths still visually overlap in screen space.
       // Reads previous-frame positions (one frame stale at 60 fps — imperceptible).
-      for (let j = 0; j < this.stars.length; j++) {
+      for (let j = 0; j < this.primitives.length; j++) {
         if (j === i) continue
-        const op = this.stars[j].root.position
+        const op = this.primitives[j].root.position
         const sx = px - op.x
         const sy = py - op.y
         const sd = Math.sqrt(sx * sx + sy * sy)
@@ -261,14 +265,14 @@ export class StarLayer {
         }
       }
 
-      star.root.position.set(px, py, pz)
+      primitive.root.position.set(px, py, pz)
 
       // Mic-reactive scale
-      star.root.scale.setScalar(star.starScale * (1.0 + this.glowPulse * MIC_SCALE))
+      primitive.root.scale.setScalar(primitive.primitiveScale * (1.0 + this.glowPulse * MIC_SCALE))
 
       // Mic-reactive emissive pulse — highlights bloom through UnrealBloomPass, then the
       // ChromaShader splits them into cyan/magenta fringing (CA for free via post chain).
-      star.root.traverse((child) => {
+      primitive.root.traverse((child) => {
         if (!child.isMesh) return
         const mats = Array.isArray(child.material) ? child.material : [child.material]
         for (const mat of mats) {
@@ -278,8 +282,8 @@ export class StarLayer {
 
       // Rotation when toggled
       if (this.rotating) {
-        star.root.rotation.y += delta * star.rotSpd
-        star.root.rotation.x += delta * star.rotSpd * 0.22
+        primitive.root.rotation.y += delta * primitive.rotSpd
+        primitive.root.rotation.x += delta * primitive.rotSpd * 0.22
       }
     }
   }
