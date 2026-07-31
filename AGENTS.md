@@ -52,7 +52,7 @@ What to use:
 - `watcher.js` — Node.js HTTP server + SSE hot-reload. The Signal Bloom bridge extends this.
 - `sketch-loader.js` — Sketch cycling, keyboard controls, code overlay. Adapt directly.
 - `libs/hydra-synth.js` — Vendored Hydra library (no CDN).
-- `libs/hydra-wrap.js`, `libs/lib-cond.js`, `libs/datamosh.js` — Custom GLSL extensions.
+- `libs/hydra-wrap.js`, `libs/lib-cond.js` — Custom GLSL extensions.
 - `sketches/` — 16 audio-reactive performance sketches. Port directly into Signal Bloom.
 - Color palette: `#00f0ff` cyan, `#ff00ee` magenta, `#1a1aff` electric blue, `#ffaa00` amber.
 - SSE pattern: 80ms debounced file watcher → `sketch-changed` / `list-changed` broadcast.
@@ -112,7 +112,7 @@ signal-bloom/
 ├── bridge.js               ← ComfyUI integration (Phase 2, new)
 ├── package.json
 ├── sketches/               ← Hydra sketch library (.js files)
-├── libs/                   ← vendored: hydra-synth, hydra-wrap, lib-cond, datamosh
+├── libs/                   ← vendored: hydra-synth, hydra-wrap, lib-cond
 ├── generated/              ← ComfyUI output (latest.png + archive/)
 └── workflows/              ← ComfyUI workflow JSON (txt2img.json, img2img.json)
 ```
@@ -138,7 +138,7 @@ The project's current phase is **production-readiness and open-source release** 
 
 Tasks:
 1. Create `package.json` with dependencies: `three`, `simplex-noise`, `ws`, `node-fetch`, `chokidar`
-2. Copy from NoirMak: `watcher.js`, `sketch-loader.js`, `libs/` (hydra-synth, hydra-wrap, lib-cond, datamosh)
+2. Copy from NoirMak: `watcher.js`, `sketch-loader.js`, `libs/` (hydra-synth, hydra-wrap, lib-cond)
 3. Copy all 16 sketches from NoirMak `sketches/` into Signal Bloom `sketches/`
 4. Port Orpheus Protocol: `HydraManager.js`, `MicInput.js`, Fracture tunnel geometry, post-processing chain
 5. Build `index.html` that initializes Three.js scene with Fracture tunnel
@@ -200,7 +200,7 @@ The 16 NoirMak sketches were designed for flat-screen display. New Signal Bloom 
 
 Tasks:
 1. Write 8–10 new Hydra sketches optimized for tunnel texturing
-2. Each sketch should have a distinct character fitting the aesthetic vocabulary: feedback, recursion, voronoi, noise fields, oscillator interference, luma-key layering, datamosh
+2. Each sketch should have a distinct character fitting the aesthetic vocabulary: feedback, recursion, voronoi, noise fields, oscillator interference, luma-key layering
 3. Name sketches with the Signal Bloom naming convention: `nn-descriptive-name.js` (e.g. `10-bloom-recursive.js`)
 4. Test each sketch as a tunnel wall texture in Three.js — not just in isolation
 5. Tune post-processing chain: bloom strength, afterimage damping, fog density — calibrated for projection

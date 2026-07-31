@@ -79,7 +79,7 @@ export class HydraManager {
       },
     ].forEach(fn => this.instance.synth.setFunction(fn))
 
-    // Expose for hydra-wrap.js and datamosh.js
+    // Expose for hydra-wrap.js
     window.hydraSynth = this.instance
 
     // Universal media helpers — available in every sketch as loadVideo(slot, path) / loadImage(slot, path).
