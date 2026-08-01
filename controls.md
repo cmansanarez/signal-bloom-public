@@ -124,23 +124,6 @@ keys silently no-op otherwise.
 
 The text you type is the **subject**. The base style (`stylePrompt` in `config.json`) is appended automatically every generation, and your subject is weighted up so short prompts survive the long style tail.
 
-### Style modifiers
-Prefix a prompt with `@<modifier>` to layer in a content lens for that one generation:
-
-| Prefix | Adds |
-|---|---|
-| `@sculpture` | hellenistic marble sculpture, classical statue, weathered stone |
-| `@angel` | ethereal wings, celestial figure, divine glow |
-| `@cyber` | chrome surfaces, futuristic tech, holographic interfaces |
-| `@floral` | organic botanical forms, blooming flowers, petals, vines |
-
-Examples:
-- `@sculpture a face dissolving into static`
-- `@floral rose` 
-- `rose` — base style only, no modifier
-
-To make a modifier persistent (no `@` prefix needed), set `"activeModifier": "sculpture"` in `config.json`. Modifiers are defined in `config.json` under `styleModifiers` — add or edit freely; changes are live.
-
 ---
 
 ## Quick Pre-Set Checklist
