@@ -4,6 +4,14 @@ Signal Bloom's tunnel, Hydra textures, and keyboard-driven performance system
 (Tier 1) need **none of this**. This doc is only for the AI crystallization arc
 (Tier 2): typing a prompt and watching a form resolve out of noise.
 
+This is the more technical half of setting up Signal Bloom — it involves
+installing a second program (ComfyUI, a separate open-source tool for
+running AI image models) and downloading several gigabytes of model files.
+If terms like "GPU" or "VRAM" below are unfamiliar: VRAM is the dedicated
+memory on a graphics card, separate from your computer's regular RAM, and
+it's what actually holds the AI model while it runs — this is the spec
+that determines whether this tier works well on a given machine.
+
 ## Requirements
 
 - **ComfyUI** installed and runnable locally — see the [ComfyUI repo](https://github.com/comfyanonymous/ComfyUI)
@@ -14,18 +22,23 @@ Signal Bloom's tunnel, Hydra textures, and keyboard-driven performance system
   `AGENTS.md`'s hardware note for a fallback approach.
 - **~12–15 GB free disk** for the model files below.
 - The **[ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF)** custom node
-  (provides the `UnetLoaderGGUF` node `workflows/txt2img.json` and
+  (a community-made plugin that adds support for GGUF-format models —
+  provides the `UnetLoaderGGUF` node `workflows/txt2img.json` and
   `workflows/img2img.json` use). Install via ComfyUI Manager, or clone it into
   `ComfyUI/custom_nodes/`. Every other node in the workflow files
   (`DualCLIPLoader`, `VAELoader`, `FluxGuidance`, `KSampler`, etc.) ships in
-  current ComfyUI core.
+  current ComfyUI core, no extra install needed.
 
 ## Files to download
 
-Signal Bloom's default workflows run **Flux.1 schnell**, quantized to GGUF for
-speed, plus its text encoders and VAE. Search Hugging Face for these — repo
-names below, exact filenames must match what's in `workflows/*.json` (or edit
-the JSON to match whatever you download):
+Signal Bloom's default workflows run **Flux.1 schnell**, an image-generation
+AI model, compressed ("quantized") to the GGUF format to run faster and take
+up less space, plus its text encoders and VAE (two supporting model files
+Flux needs alongside the main one). Search [Hugging Face](https://huggingface.co/)
+(a site that hosts AI model files for download, similar in spirit to how
+GitHub hosts code) for these — repo names below, exact filenames must match
+what's in `workflows/*.json` (or edit the JSON to match whatever you
+download):
 
 | Workflow field | What it is | Where to look |
 |---|---|---|
@@ -61,7 +74,7 @@ and set in `config.json`:
 ```
 
 `comfyui.js` only builds the LoRA node into the graph when `loraName` is set —
-see `production.md` for the implementation detail if you're curious.
+look for `LoraLoaderModelOnly` in that file if you're curious how it works.
 
 ## Verifying the setup
 
@@ -77,4 +90,4 @@ see `production.md` for the implementation detail if you're curious.
 
 First generation is slow (Flux cold-start loads ~12 GB into memory/VRAM).
 Warm generations after that run in roughly 15–30 seconds on Apple Silicon
-(M4 Pro reference: see `production.md`).
+(reference: an M4 Pro Mac mini with 24 GB unified memory).

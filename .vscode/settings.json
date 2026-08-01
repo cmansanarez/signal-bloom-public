@@ -22,16 +22,13 @@
   // No Tab-to-complete, and no inline "ghost text" suggestions.
   "editor.tabCompletion": "off",
   "editor.inlineSuggest.enabled": false,
-  "snyk.advanced.autoSelectOrganization": true,
   "cSpell.words": [
     "crossfades",
     "desaturated",
-    "devildog",
     "ifeven",
     "kaleid",
     "luma",
     "mult",
-    "Noirmak",
     "posterize",
     "scanline",
     "scanlines",

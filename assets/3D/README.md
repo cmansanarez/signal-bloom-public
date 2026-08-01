@@ -1,9 +1,16 @@
 # assets/3D/
 
-`src/PrimitiveLayer.js` loads seven `.glb` models here and floats them
-through the tunnel (`G` to toggle visible, `R` to toggle rotation). This is
-an example of dropping 3D geometry into the tunnel as a decorative layer —
-swap these for whatever fits the piece you're building.
+*New here? Get Signal Bloom running first via the main
+[README.md](../../README.md)'s Quickstart — this page assumes that's done.*
+
+`src/PrimitiveLayer.js` loads seven `.glb` files (a common 3D model file
+format, short for "glTF Binary") from this folder and floats them through
+the tunnel (`G` to toggle visible, `R` to toggle rotation). This is an
+example of dropping 3D geometry into the tunnel as a decorative layer —
+swap these for whatever fits the piece you're building. Customizing this
+means editing a few specific values in a JavaScript file — you don't need
+to be a programmer to follow the steps below, just comfortable finding and
+changing the lines described.
 
 Filenames (must match `GLB_PATHS` in `src/PrimitiveLayer.js`):
 
@@ -21,10 +28,13 @@ Any low-poly geometry works — they're recolored per-primitive at runtime
 (`EMISSIVE` in `PrimitiveLayer.js`) and don't need to ship with materials.
 
 **Size note:** these seven files are ~242 MB combined (11.8–63.4 MB each) —
-noticeably larger than "low-poly" implies. Committing them as-is
-reintroduces the repo-weight problem the fresh-history repo was built to
-avoid (884 MB → a few hundred KB). Worth compressing (`gltf-transform` /
-Draco or meshopt, or a texture-resolution pass) before this ships.
+noticeably larger than "low-poly" implies, which makes this folder most of
+what you're downloading when you clone this repository. If you're
+replacing them with your own models, keeping individual files small (well
+under 50 MB apiece) makes the repo faster for the next person to download.
+Tools like `gltf-transform` can shrink `.glb` files considerably by
+compressing the geometry (Draco or meshopt compression) and/or reducing
+texture resolution, if that's ever worth doing here.
 
 If one of the seven fails to load (missing file, bad path),
 `PrimitiveLayer.js` logs a console warning and skips it — the rest still

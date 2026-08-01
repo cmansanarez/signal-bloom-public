@@ -2,22 +2,27 @@
 
 Operational cheat-sheet for running a set. Keep this open (or printed) during performance.
 
+*First time here?* This page is a fast reference, not a tutorial — it
+assumes Signal Bloom is already installed. If you haven't set it up yet,
+start with the main **[README.md](README.md)**'s Quickstart instead.
+
 ---
 
 ## Initialization
 
-Two separate processes. **Start ComfyUI first** — it's the slowest to boot.
+**Just want the visuals (Tier 1)?** You only need step 2 below — skip
+ComfyUI entirely. Step 1 (ComfyUI) is only for Tier 2, the optional AI
+generation layer; if you haven't set that up, don't worry about it.
 
-### 1. ComfyUI  (Terminal 1)
+### 1. ComfyUI — only if you're using Tier 2 (AI generation)  (Terminal 1)
 ```bash
 cd ~/ComfyUI && source venv/bin/activate && python main.py
-
 ```
 Wait for it to print that it's serving on `127.0.0.1:8188`.
 
 ### 2. Signal Bloom bridge + Vite  (Terminal 2)
 ```bash
-cd path/to/signal-bloom   # wherever you cloned this repo
+cd path/to/signal-bloom   # wherever you downloaded/cloned this repo
 npm run dev
 ```
 `npm run dev` launches **both** the bridge (`watcher.js` → `:3001`) and Vite (`:5173`) together — there is no separate "activate the bridge" step. The `predev` hook auto-kills anything stale on those ports first.

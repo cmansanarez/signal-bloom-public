@@ -127,9 +127,7 @@ signal-bloom/
 
 ## Development Roadmap
 
-**Current state as of July 2026:** Phases 1–5 below are complete — the tunnel, Hydra sketch library, ComfyUI/Flux bridge, and performer UI are all built and have run in a live performance. The original 5-week build roadmap is historical at this point; it's kept below as a record of how the system was built, not as active tasks.
-
-The project's current phase is **production-readiness and open-source release** — see `production.md` for the live audit, findings, and the actual sequenced plan in progress now. If you're picking up work on this codebase, read `production.md` first; this roadmap section is reference, not a task list.
+**Current state:** Phases 1–5 below are complete — the tunnel, Hydra sketch library, ComfyUI/Flux bridge, and performer UI are all built and have run in a live performance, and the project has since been prepared for public release. The original 5-week build roadmap is historical at this point; it's kept below as a record of how the system was built, not as active tasks. If you're picking up work on this codebase, treat this section as background, not a task list.
 
 ---
 
@@ -266,16 +264,23 @@ These are non-negotiable constraints, not preferences. Every UI element and code
 
 ---
 
-## Hardware Note (Action Required Before Phase 2)
+## Hardware Note (for Tier 2 — AI generation)
 
-Before beginning Phase 2, run this command on the performance Mac mini and record the output:
+If you're setting up the optional ComfyUI/AI layer (see `docs/comfyui-model-setup.md`)
+and aren't sure what chip your Mac has, run this in a terminal:
 
 ```bash
 system_profiler SPHardwareDataType | grep "Chip\|Processor"
 ```
 
-- **Apple Silicon (M1/M2/M3/M4):** ComfyUI uses MPS backend. Install with `--use-mps-device` flag. LCM generation: ~4–8 seconds per run at 4–8 steps. Full crystallization arc is viable.
-- **Intel Mac mini:** ComfyUI runs CPU-only. Generation: 60–120+ seconds. Streaming arc is not viable without a fallback strategy (pre-generate and cycle images). This changes Phase 2 significantly.
+- **Apple Silicon (M1/M2/M3/M4):** ComfyUI uses the MPS backend. Install with the
+  `--use-mps-device` flag. LCM generation: ~4–8 seconds per run at 4–8 steps. The full
+  crystallization arc (noise resolving live as you watch) is viable.
+- **Intel Mac:** ComfyUI runs CPU-only. Generation: 60–120+ seconds per image. The live
+  streaming arc isn't viable at that speed — Tier 1 (no AI) is still fully usable, or
+  consider a pre-generate-and-cycle approach instead of live generation.
+- **Windows/Linux with an NVIDIA GPU:** see the VRAM requirement in
+  `docs/comfyui-model-setup.md` instead of this Mac-specific check.
 
 Do not begin Phase 2 until this is confirmed.
 

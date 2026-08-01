@@ -1,5 +1,8 @@
 # Sketch Library
 
+*New here? Get Signal Bloom running first via the main
+[README.md](../README.md)'s Quickstart — this page assumes that's done.*
+
 `sketches/` ships five brand-new, generic Hydra example sketches — not
 performance material. They exist purely to teach the syntax, the hot-reload
 workflow, and the audio-reactive vocabulary this project is built on, in a
@@ -32,6 +35,7 @@ Drop a new `.js` file in `sketches/` and it appears in the sketch list
 automatically (SSE `list-changed` event, no restart needed) — see
 `watcher.js`'s `getSketchList()`. A sketch is plain Hydra code ending in
 `.out()`; nothing else is required. If it references local media, drop the
-files in `videos/`/`images/` at the project root (gitignored by default —
+files in `videos/`/`images/` at the project root (already listed in
+`.gitignore`, so they won't get uploaded if you publish your own fork —
 see the README's "Extending it" section) and load them the way Hydra's
 `s0`–`s3` source slots do.
