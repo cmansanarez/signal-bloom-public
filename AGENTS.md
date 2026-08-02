@@ -117,12 +117,6 @@ signal-bloom/
 └── workflows/              ← ComfyUI workflow JSON (txt2img.json, img2img.json)
 ```
 
-**Reference implementations** for all major integration patterns are in `prototypes/code-studies/`. Read these before writing production code:
-- `study-01-sse-bridge.js` — bridge server skeleton
-- `study-02-comfyui-websocket.js` — ComfyUI API + workflow builders
-- `study-03-hydra-to-threejs.js` — HydraTextureManager, AIFormLayer, SSE wiring
-- `study-04-audio-tunnel.js` — FFT → tunnel deformation, camera speed, post-processing
-
 ---
 
 ## Development Roadmap
@@ -298,14 +292,3 @@ Before any live performance:
 - [ ] Test prompt dispatch — one generation successful
 - [ ] Sketch list loaded, keyboard navigation confirmed
 - [ ] Internet connection disabled or firewalled (performance is offline-safe by design)
-
----
-
-## Key Documentation
-
-- `prototypes/wireframes/` — system architecture, performer UI layout, tunnel spatial zones
-- `prototypes/code-studies/` — reference implementations for all Phase 1–2 integration patterns
-- `prototypes/mockups/mockup-01-performer-interface.html` — visual design reference (open in browser)
-- `prototypes/interactive/prototype-01-performer-controls.html` — keyboard interaction simulation
-- `prototypes/interactive/prototype-02-generation-arc.html` — AI generation arc simulation
-- `docs/prototyping-summary.md` — full narrative description of all prototyping deliverables
