@@ -1,13 +1,13 @@
 # Signal Bloom
 
 A live audiovisual performance instrument: a Three.js tunnel textured with
-live-coded Hydra visuals, audio-reactive to whatever's in the room, with an
+live-coded Hydra visuals, audio-reactive to your mic input, with an
 optional local AI generation layer (ComfyUI + Flux) that lets a performer type
 a prompt and watch a form crystallize out of noise in the space ahead of the
 audience.
 
-It's built to be played, not just watched — every visual parameter is
-keyboard-driven, sketches hot-reload the instant you save them, and the whole
+It's built to be played and improvised. Every visual parameter is
+keyboard-driven, with hand written code sketches that hot-reload the instant you save them. The whole
 system runs fully offline once installed.
 
 ## Quickstart (visuals only, ~10 minutes)
@@ -205,7 +205,7 @@ tuning prompts, LoRA strength, or sampler settings needs no restart.
   **[Flux](https://github.com/black-forest-labs/flux)** — the AI generation
   layer.
 - The tunnel geometry, audio pipeline, and post-processing chain descend
-  from an earlier project, Orpheus Protocol.
+  from an earlier project, **[Orpheus Protocol](https://orpheus.noirmak.com/)**.
 - The sketch-cycling/hot-reload/code-overlay pattern descends from an
   earlier VJ system built for the same practice.
 
